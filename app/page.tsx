@@ -1,6 +1,25 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 
 export default function Home() {
+  const [formData, setFormData] = useState({
+    nama: '',
+    whatsapp: '',
+    paket: 'Wisuda & Portrait',
+    tanggal: '',
+    catatan: '',
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const pesan = `Halo Potoin Kamu, saya ingin booking jadwal foto:%0A%0A- *Nama*: ${formData.nama}%0A- *No. WA*: ${formData.whatsapp}%0A- *Paket*: ${formData.paket}%0A- *Tanggal*: ${formData.tanggal}%0A- *Catatan*: ${formData.catatan || '-'}`;
+    
+    // Ganti nomor di bawah ini dengan nomor WhatsApp aktifmu (format: 628xxx)
+    const nomorWA = '6281234567890'; 
+    window.open(`https://wa.me/${nomorWA}?text=${pesan}`, '_blank');
+  };
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 font-sans">
       {/* Navbar */}
@@ -8,8 +27,7 @@ export default function Home() {
         <h1 className="text-2xl font-bold tracking-wider text-amber-400">POTOIN KAMU</h1>
         <div className="space-x-6 text-sm font-medium">
           <a href="#layanan" className="hover:text-amber-400 transition">Layanan</a>
-          <a href="#portofolio" className="hover:text-amber-400 transition">Portofolio</a>
-          <a href="#kontak" className="hover:text-amber-400 transition">Kontak</a>
+          <a href="#booking" className="hover:text-amber-400 transition">Booking</a>
         </div>
       </nav>
 
@@ -23,9 +41,7 @@ export default function Home() {
           Layanan foto wisuda, event, portrait, dan dokumentasi momen spesial dengan hasil estetis dan harga bersahabat.
         </p>
         <a 
-          href="https://wa.me/6281234567890" 
-          target="_blank" 
-          rel="noopener noreferrer"
+          href="#booking" 
           className="inline-block bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-8 py-4 rounded-full transition shadow-lg shadow-amber-500/20"
         >
           Pesan Jadwal Sekarang
@@ -53,6 +69,78 @@ export default function Home() {
             <p className="text-2xl font-extrabold text-white mb-4">Mulai Rp 200k</p>
           </div>
         </div>
+      </section>
+
+      {/* Booking Form Section */}
+      <section id="booking" className="py-16 px-4 max-w-2xl mx-auto border-t border-slate-800">
+        <h3 className="text-2xl font-bold text-center mb-8">Formulir Pemesanan</h3>
+        <form onSubmit={handleSubmit} className="bg-slate-900 p-8 rounded-2xl border border-slate-800 space-y-6">
+          <div>
+            <label className="block text-sm font-medium mb-2 text-slate-300">Nama Lengkap</label>
+            <input 
+              type="text" 
+              required
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-amber-500"
+              placeholder="Masukkan nama Anda"
+              value={formData.nama}
+              onChange={(e) => setFormData({...formData, nama: e.target.value})}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2 text-slate-300">Nomor WhatsApp</label>
+            <input 
+              type="tel" 
+              required
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-amber-500"
+              placeholder="08123456789"
+              value={formData.whatsapp}
+              onChange={(e) => setFormData({...formData, whatsapp: e.target.value})}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2 text-slate-300">Pilihan Paket</label>
+            <select 
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-amber-500"
+              value={formData.paket}
+              onChange={(e) => setFormData({...formData, paket: e.target.value})}
+            >
+              <option value="Wisuda & Portrait">Wisuda & Portrait (Rp 150k)</option>
+              <option value="Event & Dokumentasi">Event & Dokumentasi (Rp 300k)</option>
+              <option value="Group / Groupie">Group / Groupie (Rp 200k)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2 text-slate-300">Rencana Tanggal Foto</label>
+            <input 
+              type="date" 
+              required
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-amber-500"
+              value={formData.tanggal}
+              onChange={(e) => setFormData({...formData, tanggal: e.target.value})}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2 text-slate-300">Catatan Khusus (Opsional)</label>
+            <textarea 
+              rows={3}
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-amber-500"
+              placeholder="Lokasi foto, konsep, dll."
+              value={formData.catatan}
+              onChange={(e) => setFormData({...formData, catatan: e.target.value})}
+            />
+          </div>
+
+          <button 
+            type="submit"
+            className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-4 rounded-xl transition"
+          >
+            Kirim Pemesanan via WhatsApp
+          </button>
+        </form>
       </section>
 
       {/* Footer */}
