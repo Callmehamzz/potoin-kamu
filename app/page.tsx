@@ -8,14 +8,16 @@ export default function Home() {
     whatsapp: '',
     paket: 'Wisuda & Portrait',
     tanggal: '',
-    jam: '',
+    jam: '10:00',
+    ampm: 'AM',
     lokasi: '',
     catatan: '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const pesan = `Halo Potoin Kamu, saya ingin booking jadwal foto:%0A%0A- *Nama*: ${formData.nama}%0A- *No. WA*: ${formData.whatsapp}%0A- *Paket*: ${formData.paket}%0A- *Tanggal*: ${formData.tanggal}%0A- *Waktu/Jam*: ${formData.jam}%0A- *Lokasi*: ${formData.lokasi}${formData.catatan ? `%0A- *Catatan*: ${formData.catatan}` : ''}`;
+    const waktuLengkap = `${formData.jam} ${formData.ampm}`;
+    const pesan = `Halo Potoin Kamu, saya ingin booking jadwal foto:%0A%0A- *Nama*: ${formData.nama}%0A- *No. WA*: ${formData.whatsapp}%0A- *Paket*: ${formData.paket}%0A- *Tanggal*: ${formData.tanggal}%0A- *Waktu/Jam*: ${waktuLengkap}%0A- *Lokasi*: ${formData.lokasi}${formData.catatan ? `%0A- *Catatan*: ${formData.catatan}` : ''}`;
     
     const nomorWA = '628135353498'; 
     window.open(`https://wa.me/${nomorWA}?text=${pesan}`, '_blank');
@@ -118,27 +120,40 @@ export default function Home() {
             </select>
           </div>
 
+          {/* Tanggal & Jam (AM/PM) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-neutral-700">Tanggal Sesi Foto</label>
               <input 
-                type="date" 
+                type="text" 
                 required
                 className="w-full bg-white border border-neutral-300 rounded-xl px-4 py-3.5 text-neutral-900 focus:outline-none focus:border-amber-500 transition"
+                placeholder="Contoh: 25 Oktober 2026"
                 value={formData.tanggal}
                 onChange={(e) => setFormData({...formData, tanggal: e.target.value})}
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-neutral-700">Waktu / Jam (WIB)</label>
-              <input 
-                type="time" 
-                required
-                className="w-full bg-white border border-neutral-300 rounded-xl px-4 py-3.5 text-neutral-900 focus:outline-none focus:border-amber-500 transition"
-                value={formData.jam}
-                onChange={(e) => setFormData({...formData, jam: e.target.value})}
-              />
+              <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-neutral-700">Waktu / Jam & Sesi</label>
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  required
+                  className="w-full bg-white border border-neutral-300 rounded-xl px-4 py-3.5 text-neutral-900 focus:outline-none focus:border-amber-500 transition"
+                  placeholder="09:00"
+                  value={formData.jam}
+                  onChange={(e) => setFormData({...formData, jam: e.target.value})}
+                />
+                <select 
+                  className="bg-white border border-neutral-300 rounded-xl px-3 py-3.5 text-neutral-900 focus:outline-none focus:border-amber-500 font-semibold"
+                  value={formData.ampm}
+                  onChange={(e) => setFormData({...formData, ampm: e.target.value})}
+                >
+                  <option value="AM">AM</option>
+                  <option value="PM">PM</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -180,4 +195,4 @@ export default function Home() {
       </footer>
     </main>
   );
-} 
+}
