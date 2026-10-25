@@ -15,8 +15,8 @@ export default function Home() {
     e.preventDefault();
     const pesan = `Halo Potoin Kamu, saya ingin booking jadwal foto:%0A%0A- *Nama*: ${formData.nama}%0A- *No. WA*: ${formData.whatsapp}%0A- *Paket*: ${formData.paket}%0A- *Tanggal*: ${formData.tanggal}%0A- *Catatan*: ${formData.catatan || '-'}`;
     
-    // Ganti nomor di bawah ini dengan nomor WhatsApp aktifmu (format: 628xxx)
-    const nomorWA = '6281234567890'; 
+    // Nomor WhatsApp aktif Potoin Kamu
+    const nomorWA = '628135353498'; 
     window.open(`https://wa.me/${nomorWA}?text=${pesan}`, '_blank');
   };
 
@@ -93,7 +93,7 @@ export default function Home() {
               type="tel" 
               required
               className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-amber-500"
-              placeholder="08123456789"
+              placeholder="08135353498"
               value={formData.whatsapp}
               onChange={(e) => setFormData({...formData, whatsapp: e.target.value})}
             />
@@ -136,7 +136,7 @@ export default function Home() {
 
           <button 
             type="submit"
-            className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-4 rounded-xl transition"
+            className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-4 rounded-xl transition cursor-pointer"
           >
             Kirim Pemesanan via WhatsApp
           </button>
