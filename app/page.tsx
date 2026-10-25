@@ -143,7 +143,7 @@ export default function Home() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-neutral-300">Lokasi / Tempat Foto</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-2 text-neutral-300">Lokasi / Tempat Foto (Wajib)</label>
             <input 
               type="text" 
               required
