@@ -1,37 +1,26 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Calendar, 
-  Clock, 
-  CheckCircle2, 
   MessageCircle, 
   ChevronDown, 
   ChevronUp, 
   Sparkles, 
-  Tag, 
-  Info,
   Heart,
   Briefcase,
   Lightbulb,
   ChevronLeft,
   ChevronRight,
-  ArrowRight,
-  Camera
+  ArrowRight
 } from 'lucide-react';
 
 export default function Home() {
-  // State Carousel Portofolio Auto-Play
   const [currentSlide, setCurrentSlide] = useState(0);
-
-  // State Pilihan Hirarki: Category -> SubCategory -> Packages
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(null);
-
-  // State FAQ Accordion
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  // State Form Booking Multi-Step
   const [step1Category, setStep1Category] = useState<string>('');
   const [step2SubCategory, setStep2SubCategory] = useState<string>('');
   const [locationType, setLocationType] = useState<string>('');
@@ -42,7 +31,6 @@ export default function Home() {
   const [timePeriod, setTimePeriod] = useState<string>('AM');
   const [notes, setNotes] = useState<string>('');
 
-  // Data Kategori, Sub-Kategori, & Paket Harga
   const categoryData = [
     {
       id: 'momen',
@@ -149,7 +137,6 @@ export default function Home() {
     }
   ];
 
-  // Portofolio Images untuk Auto Slider
   const portfolioSlides = [
     { title: 'Wisuda Sat-Set', category: 'Potoin Momenmu', img: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&auto=format&fit=crop' },
     { title: 'Couple & Prewedding', category: 'Potoin Momenmu', img: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800&auto=format&fit=crop' },
@@ -158,7 +145,6 @@ export default function Home() {
     { title: 'Themed / Ide Gila', category: 'Potoin Ide Gila-mu', img: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop' }
   ];
 
-  // Auto-play Slider 2 Detik
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % portfolioSlides.length);
@@ -226,20 +212,18 @@ export default function Home() {
       <header className="relative py-12 px-4 text-center overflow-hidden border-b border-amber-100 bg-gradient-to-b from-amber-50/60 to-white">
         <div className="max-w-4xl mx-auto relative z-10 space-y-4">
           
-          {/* PLACEHOLDER LOGO */}
+          {/* LOGO ASLI */}
           <div className="flex justify-center mb-2">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center shadow-lg shadow-amber-500/20 text-neutral-950 font-black text-2xl border-2 border-white">
-              LOGO
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="Potoin Kamu Logo" 
+              className="h-16 md:h-24 object-contain drop-shadow-sm" 
+            />
           </div>
 
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100/80 border border-amber-300 text-amber-900 text-xs md:text-sm font-semibold shadow-sm">
             <Sparkles className="w-4 h-4 text-amber-600" /> UMKM & Student Friendly Photography
           </div>
-          
-          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-neutral-900">
-            Potoin <span className="text-amber-600 underline decoration-amber-400">Kamu</span>
-          </h1>
           
           <p className="text-base md:text-lg text-neutral-600 max-w-xl mx-auto font-normal">
             Buat kenangan yang gak bakal keulang. Tanpa kaku, harga jujur, dan hasil yang bikin kamu senyum-senyum sendiri.
@@ -261,7 +245,7 @@ export default function Home() {
         </div>
       </header>
 
-      {/* --- CAROUSEL PORTOFOLIO SLIDER (AUTO 2 DETIK + MANUAL) --- */}
+      {/* --- CAROUSEL PORTOFOLIO SLIDER --- */}
       <section className="py-12 px-4 max-w-4xl mx-auto">
         <div className="text-center mb-6 space-y-1">
           <h2 className="text-2xl md:text-3xl font-extrabold text-neutral-900">Portofolio & Kategori Foto</h2>
@@ -279,7 +263,6 @@ export default function Home() {
             <h3 className="text-xl md:text-2xl font-black">{portfolioSlides[currentSlide].title}</h3>
           </div>
 
-          {/* Navigasi Manual Slider */}
           <button 
             onClick={() => setCurrentSlide((prev) => (prev === 0 ? portfolioSlides.length - 1 : prev - 1))}
             className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 text-neutral-900 hover:bg-white transition"
@@ -293,7 +276,6 @@ export default function Home() {
             <ChevronRight className="w-5 h-5" />
           </button>
 
-          {/* Dots Indicator */}
           <div className="absolute bottom-3 right-4 flex gap-1.5">
             {portfolioSlides.map((_, idx) => (
               <div 
@@ -305,14 +287,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* --- KATEGORI ➔ SUB-KATEGORI ➔ PAKET HARGA (HIERARKI INTERAKTIF) --- */}
+      {/* --- KATEGORI ➔ SUB-KATEGORI ➔ PAKET HARGA --- */}
       <section id="harga" className="py-12 px-4 max-w-5xl mx-auto border-t border-neutral-200">
         <div className="text-center mb-8 space-y-2">
           <h2 className="text-2xl md:text-3xl font-bold text-neutral-900">Pilih Kategori Layanan</h2>
           <p className="text-sm text-neutral-600">Klik "Pilih yang ini" untuk membuka sub-kategori & paket harga</p>
         </div>
 
-        {/* STEP A: MAIN CATEGORY CARDS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {categoryData.map((cat) => {
             const Icon = cat.icon;
@@ -337,7 +318,7 @@ export default function Home() {
                 <button
                   onClick={() => {
                     setSelectedCategory(cat.id);
-                    setSelectedSubCategory(null); // Reset sub-category
+                    setSelectedSubCategory(null);
                   }}
                   className={`mt-6 w-full py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition ${
                     isSelected
@@ -353,7 +334,6 @@ export default function Home() {
           })}
         </div>
 
-        {/* STEP B: SUB-CATEGORIES (Tampil Jika Kategori Dipilih) */}
         {selectedCategory && (
           <div className="bg-amber-50/50 border border-amber-200 rounded-2xl p-6 mb-8 animate-fadeIn space-y-4">
             <h3 className="text-lg font-extrabold text-neutral-900 flex items-center gap-2">
@@ -383,7 +363,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* STEP C: PACKAGES & PRICING (Tampil Jika Sub-Kategori Dipilih) */}
         {selectedCategory && selectedSubCategory && (
           <div className="bg-white border-2 border-amber-400 rounded-2xl p-6 space-y-6 shadow-lg animate-fadeIn">
             <div className="border-b border-neutral-100 pb-3">
@@ -431,7 +410,6 @@ export default function Home() {
           </div>
 
           <form onSubmit={handleSendWhatsApp} className="space-y-6">
-            {/* STEP 1 */}
             <div className="space-y-3">
               <label className="block text-sm font-bold text-amber-600 flex items-center gap-2">
                 <span className="w-6 h-6 rounded-full bg-amber-500 text-neutral-950 flex items-center justify-center text-xs font-bold">1</span>
@@ -464,7 +442,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* STEP 2 */}
             {step1Category && (
               <div className="space-y-3 pt-2">
                 <label className="block text-sm font-bold text-amber-600 flex items-center gap-2">
@@ -496,14 +473,12 @@ export default function Home() {
               </div>
             )}
 
-            {/* STEP 3 */}
             <div className="space-y-4 pt-2 border-t border-neutral-100">
               <label className="block text-sm font-bold text-amber-600 flex items-center gap-2">
                 <span className="w-6 h-6 rounded-full bg-amber-500 text-neutral-950 flex items-center justify-center text-xs font-bold">3</span>
                 Mau potoin di mana & Kapan?
               </label>
 
-              {/* Opsi Lokasi */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
                   'Outdoor Malang',
@@ -526,7 +501,6 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* Tanggal & Waktu (AM/PM) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-neutral-600 mb-1">Pilih Tanggal</label>
@@ -559,7 +533,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Data Diri */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-neutral-600 mb-1">Nama Lengkap</label>
@@ -585,7 +558,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Catatan Tambahan */}
               <div>
                 <label className="block text-xs font-semibold text-neutral-600 mb-1">Catatan Khusus (Optional)</label>
                 <textarea
@@ -598,7 +570,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               className="w-full py-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-neutral-950 font-extrabold flex items-center justify-center gap-2 transition shadow-lg shadow-amber-500/20 text-base"
