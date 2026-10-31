@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { MessageCircle, ChevronLeft, ChevronRight, ArrowLeft, Check, Sparkles, Calendar, Clock, MapPin, ExternalLink } from 'lucide-react';
+import { MessageCircle, ChevronLeft, ChevronRight, ArrowLeft, Check, Sparkles, Calendar, Clock, MapPin, ExternalLink, HelpCircle, Camera } from 'lucide-react';
 
 const categories = [
   {
@@ -39,6 +39,19 @@ const categories = [
   }
 ];
 
+const portfolioPhotos = [
+  { title: 'Prewedding Estetik', image: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80', category: 'Momenmu' },
+  { title: 'Wisuda Ceria', image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=800&q=80', category: 'Momenmu' },
+  { title: 'Produk UMKM', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80', category: 'Bisnismu' },
+  { title: 'Kuliner Menggiurkan', image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80', category: 'Bisnismu' },
+];
+
+const faqs = [
+  { q: 'Bagaimana cara memesan jadwal agar tidak tabrakan?', a: 'Anda dapat memilih tanggal dan slot waktu luang langsung saat memilih paket layanan. Sistem kami akan membantu mencocokkan jadwal yang masih kosong.' },
+  { q: 'Apakah lokasi pemotretan bisa ditentukan sendiri?', a: 'Tentu saja! Anda bisa memasukkan alamat atau link Google Maps lokasi pemotretan saat melakukan pemesanan via WhatsApp.' },
+  { q: 'Berapa lama waktu pengerjaan hasil foto?', a: 'Hasil foto pilihan yang sudah diedit profesional akan dikirimkan dalam waktu 3-5 hari kerja.' },
+];
+
 const availableTimeSlots = [
   '09.00 - 11.00 WIB (Pagi)',
   '13.00 - 15.00 WIB (Siang)',
@@ -50,7 +63,6 @@ export default function LandingPage() {
   const [selectedCategory, setSelectedCategory] = useState<null | typeof categories[0]>(null);
   const [selectedSub, setSelectedSub] = useState<null | { name: string; price: string; duration: string }>(null);
   
-  // State untuk form jadwal & lokasi
   const [bookingDate, setBookingDate] = useState('');
   const [bookingTime, setBookingTime] = useState(availableTimeSlots[0]);
   const [locationText, setLocationText] = useState('');
@@ -240,8 +252,8 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Potoin Aku Button Moved Here */}
-            <div className="text-center mt-12">
+            {/* Potoin Aku Button */}
+            <div className="text-center mt-12 mb-16">
               <button
                 onClick={() => {
                   setSelectedCategory(categories[0]);
@@ -252,6 +264,61 @@ export default function LandingPage() {
                 Potoin aku sekarang ✨
               </button>
             </div>
+
+            {/* Galeri Foto Portofolio */}
+            <div className="mt-16 pt-12 border-t border-neutral-100">
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center gap-2 text-amber-700 bg-amber-50 px-3.5 py-1 rounded-full text-xs font-semibold mb-2">
+                  <Camera className="w-3.5 h-3.5" />
+                  Galeri Unggulan
+                </div>
+                <h3 className="font-serif text-2xl md:text-3xl font-bold text-neutral-900">
+                  Hasil Karya & Momen Pilihan
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                {portfolioPhotos.map((photo, i) => (
+                  <div key={i} className="group relative rounded-2xl overflow-hidden shadow-md aspect-[4/5] bg-neutral-100">
+                    <Image
+                      src={photo.image}
+                      alt={photo.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute bottom-4 left-4 right-4 text-white">
+                      <span className="text-[10px] uppercase tracking-wider bg-amber-500 text-neutral-950 font-bold px-2.5 py-0.5 rounded-full">
+                        {photo.category}
+                      </span>
+                      <h4 className="font-serif font-bold text-base mt-1.5">{photo.title}</h4>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* FAQ Section */}
+            <div className="mt-20 pt-12 border-t border-neutral-100 max-w-3xl mx-auto">
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center gap-2 text-amber-700 bg-amber-50 px-3.5 py-1 rounded-full text-xs font-semibold mb-2">
+                  <HelpCircle className="w-3.5 h-3.5" />
+                  FAQ
+                </div>
+                <h3 className="font-serif text-2xl md:text-3xl font-bold text-neutral-900">
+                  Pertanyaan yang Sering Diajukan
+                </h3>
+              </div>
+
+              <div className="space-y-4">
+                {faqs.map((faq, i) => (
+                  <div key={i} className="bg-amber-50/30 border border-amber-200/50 rounded-2xl p-6 shadow-sm">
+                    <h4 className="font-serif font-bold text-neutral-900 text-lg mb-2">{faq.q}</h4>
+                    <p className="text-neutral-600 text-sm leading-relaxed">{faq.a}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </>
         ) : !selectedSub ? (
           /* Focused Sub-Category View */
@@ -261,7 +328,7 @@ export default function LandingPage() {
               className="inline-flex items-center gap-2 text-sm font-semibold text-amber-800 hover:text-amber-950 mb-6 bg-white px-4 py-2 rounded-full shadow-sm border border-amber-200/60 transition-all hover:scale-105"
             >
               <ArrowLeft className="w-4 h-4" />
-              Kembali ke Pilihan Kategori
+              Kembali ke Beranda & Kategori
             </button>
 
             <div className="border-b border-amber-200/60 pb-6 mb-8">
@@ -305,7 +372,7 @@ export default function LandingPage() {
             </div>
           </div>
         ) : (
-          /* Booking & Schedule Slot Form (Waktu & Google Maps Integration) */
+          /* Booking & Schedule Slot Form */
           <div className="max-w-2xl mx-auto bg-white border border-amber-200/80 rounded-3xl p-6 md:p-10 shadow-xl">
             <button
               onClick={() => setSelectedSub(null)}
