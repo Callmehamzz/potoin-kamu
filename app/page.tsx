@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, ArrowLeft, Check, Calendar, Clock, MapPin, ExternalLink, HelpCircle, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react';
 
 const categories = [
@@ -92,8 +92,8 @@ const categories = [
   }
 ];
 
-// Perulangan kategori untuk gulir tanpa batas ke samping
-const infiniteCategories = [...categories, ...categories, ...categories];
+// Perbanyak array agar perputaran infinite scroll sangat mulus
+const infiniteCategories = [...categories, ...categories, ...categories, ...categories, ...categories];
 
 const faqsData = [
   {
@@ -193,6 +193,28 @@ export default function LandingPage() {
   const [locationText, setLocationText] = useState('');
 
   const [openFaqIndex, setOpenFaqIndex] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Set posisi awal scroll di tengah agar bisa digeser ke kiri maupun kanan tanpa batas
+  useEffect(() => {
+    if (scrollRef.current) {
+      const totalWidth = scrollRef.current.scrollWidth;
+      scrollRef.current.scrollLeft = totalWidth / 2;
+    }
+  }, []);
+
+  // Fungsi infinite scroll looping otomatis saat mendekati ujung
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, scrollWidth } = scrollRef.current;
+    const oneFifth = scrollWidth / 5;
+
+    if (scrollLeft < oneFifth) {
+      scrollRef.current.scrollLeft += oneFifth * 2;
+    } else if (scrollLeft > oneFifth * 4) {
+      scrollRef.current.scrollLeft -= oneFifth * 2;
+    }
+  };
 
   const toggleFaq = (key: string) => {
     setOpenFaqIndex(openFaqIndex === key ? null : key);
@@ -294,8 +316,12 @@ export default function LandingPage() {
               <p className="text-neutral-500 text-sm mt-1">Geser ke samping untuk melihat pilihan kategori lainnya ➔</p>
             </div>
 
-            {/* Infinite Horizontal Scrolling Card Grid */}
-            <div className="flex overflow-x-auto no-scrollbar gap-6 py-6 px-4 snap-x snap-mandatory">
+            {/* True Infinite Horizontal Scrolling Card Grid */}
+            <div 
+              ref={scrollRef}
+              onScroll={handleScroll}
+              className="flex overflow-x-auto no-scrollbar gap-6 py-6 px-4 snap-x snap-mandatory scroll-smooth"
+            >
               {infiniteCategories.map((cat, idx) => (
                 <div
                   key={`${cat.id}-${idx}`}
@@ -415,7 +441,7 @@ export default function LandingPage() {
             </div>
           </>
         ) : !selectedSub ? (
-          /* Focused Sub-Category View (Price and duration tags removed) */
+          /* Focused Sub-Category View */
           <div className="max-w-3xl mx-auto bg-amber-50/40 border border-amber-200/60 rounded-3xl p-6 md:p-10 shadow-xl">
             <button
               onClick={() => setSelectedCategory(null)}
