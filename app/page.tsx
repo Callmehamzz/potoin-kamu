@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { MessageCircle, ChevronLeft, ChevronRight, ArrowLeft, Check, Sparkles, Calendar, Clock, MapPin, ExternalLink, HelpCircle } from 'lucide-react';
+import { MessageCircle, ArrowLeft, Check, Sparkles, Calendar, Clock, MapPin, ExternalLink, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
 const categories = [
   {
@@ -92,10 +92,87 @@ const categories = [
   }
 ];
 
-const faqs = [
-  { q: 'Bagaimana cara memesan jadwal agar tidak tabrakan?', a: 'Anda dapat memilih tanggal dan slot waktu luang langsung saat memilih paket layanan. Sistem kami akan membantu mencocokkan jadwal yang masih kosong.' },
-  { q: 'Apakah lokasi pemotretan bisa ditentukan sendiri?', a: 'Tentu saja! Anda bisa memasukkan alamat atau link Google Maps lokasi pemotretan saat melakukan pemesanan via WhatsApp.' },
-  { q: 'Berapa lama waktu pengerjaan hasil foto?', a: 'Hasil foto pilihan yang sudah diedit profesional akan dikirimkan dalam waktu 3-5 hari kerja.' },
+const faqsData = [
+  {
+    category: '1. BOOKING & JADWAL',
+    items: [
+      {
+        q: 'Gimana cara booking di "potoin kamu"?',
+        a: 'Gampang! Tinggal klik tombol "Potoin Aku!" di paket yang kamu mau, atau DM/WhatsApp kita. Ceritain mau potoin apa, tanggal berapa, dan di mana. Nanti kita cek jadwal & kirim detail bookingnya.'
+      },
+      {
+        q: 'Harus DP berapa? H- berapa baru boleh booking?',
+        a: 'DP 50% buat kunci tanggal kamu ya. Sisa pelunasan pas hari H selesai sesi foto. Booking bisa dari H-3 bulan sampai H-7, tapi makin mepet takutnya bentrok. Mending dari H-14 biar aman.'
+      },
+      {
+        q: 'Bisa gak sih dadakan? Besok mau dipotoin.',
+        a: 'Bisa banget kalau jadwal kita kosong! Coba DM aja dulu. Kalau urgent/besok ada charge +Rp 100rb ya, soalnya kita harus atur ulang jadwal lain.'
+      },
+      {
+        q: 'Kalau ujan/cuaca jelek gimana?',
+        a: 'Tenang, bisa reschedule gratis 1x kok. Atau kita pindah ke lokasi indoor/cafe. Kita pastiin kamu tetep kepotoin dengan cakep.'
+      }
+    ]
+  },
+  {
+    category: '2. HARGA & PAKET',
+    items: [
+      {
+        q: 'Itu harga "mulai dari", nanti bisa nambah apa aja?',
+        a: 'Bisa nambah kalau: lokasi di luar Malang Kota (harga menyesuaikan jarak), nambah jam +Rp 150rb/jam, nambah foto edit +Rp 15rb/foto, atau request cetak album. Tapi semua kita infoin di awal, jadi gak ada biaya kaget.'
+      },
+      {
+        q: 'Kok murah? Hasilnya bagus gak?',
+        a: 'Murah karena kita pake sistem paket durasi pendek & efisien, bukan karena hasil asal-asalan. Cek aja hasil "potoin kamu" di IG @potoin.kamu buat buktiin.'
+      },
+      {
+        q: 'Bisa nego gak? Budget aku pas-pasan.',
+        a: 'Daripada nego, mending kamu ambil paket paling dasar terus nambah add-on dikit-dikit sesuai budget. Atau DM aja ceritain budget-mu, nanti kita racikin paket "potoin sebisanya" khusus buat kamu.'
+      },
+      {
+        q: 'File aslinya dikasih semua gak?',
+        a: 'Dikasih dong! Semua paket udah dapet BONUS semua file original via Google Drive. Jadi selain file edit pilihan, kamu tetep punya semua momen mentahnya.'
+      }
+    ]
+  },
+  {
+    category: '3. TEKNIS SESI FOTO',
+    items: [
+      {
+        q: 'Lokasinya di mana aja? Bisa di rumah?',
+        a: 'Bisa banget! Kita ada 3 opsi: 1. Outdoor area Malang Kota — alun-alun, taman, kampus. 2. Home visit — kita yang dateng ke rumahmu. 3. Studio partner — ada biaya sewa mulai Rp 150rb/jam. Kamu pilih yang paling nyaman.'
+      },
+      {
+        q: 'Outfit/bajunya harus gimana? Diajarin pose gak?',
+        a: 'Pakai yang bikin kamu pede! Nanti H-7 kita kirim guide warna & outfit biar nyambung. Pas sesi juga bakal kita arahin pose kok, dijamin gak bakal kaku. Tim "potoin kamu" jagonya bikin suasana cair.'
+      },
+      {
+        q: 'Aku malu kamera, bisa gak sih?',
+        a: 'Justru itu tugas kita! 90% klien "potoin kamu" awalnya juga gitu. Kita ngobrol-ngobrol dulu, becanda, biar kamu lupa kalau lagi dipotoin. Hasilnya malah lebih natural.'
+      },
+      {
+        q: 'Berapa lama fotonya jadi?',
+        a: 'File original H+1 udah kita kirim. File edit: 3-7 hari kerja tergantung paketnya. Kalau mau express 1x24 jam bisa +Rp 200rb. Nanti H+1 kamu juga dapet 3-5 foto sneak peek buat diupload duluan.'
+      }
+    ]
+  },
+  {
+    category: '4. LAIN-LAIN',
+    items: [
+      {
+        q: 'Min berapa orang kalau mau foto grup?',
+        a: 'Gak ada minimal! Sendiri bisa, ber-30 juga hayuk. Kalau di atas 6 orang, ambil paket "Potoin Keluarga Mini" atau "Potoin Event Mini" ya biar waktunya cukup.'
+      },
+      {
+        q: 'Bisa bawa properti sendiri?',
+        a: 'Boleh banget! Balon, buket, topi toga, properti jualanmu, bawa aja. Makin personal makin bagus.'
+      },
+      {
+        q: '"potoin kamu" melayani luar kota Malang gak?',
+        a: 'Melayani! Area Batu, Surabaya, dll bisa. Ada tambahan transport & akomodasi aja. DM buat quotation khusus luar kota ya.'
+      }
+    ]
+  }
 ];
 
 const availableTimeSlots = [
@@ -105,7 +182,6 @@ const availableTimeSlots = [
 ];
 
 export default function LandingPage() {
-  const [activeIndex, setActiveIndex] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<null | typeof categories[0]>(null);
   const [selectedSub, setSelectedSub] = useState<null | { name: string; price: string; duration: string; image: string }>(null);
   
@@ -113,13 +189,12 @@ export default function LandingPage() {
   const [bookingTime, setBookingTime] = useState(availableTimeSlots[0]);
   const [locationText, setLocationText] = useState('');
 
-  useEffect(() => {
-    if (selectedCategory) return;
-    const interval = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % categories.length);
-    }, 3500);
-    return () => clearInterval(interval);
-  }, [selectedCategory]);
+  // Accordion state untuk FAQ
+  const [openFaqIndex, setOpenFaqIndex] = useState<string | null>(null);
+
+  const toggleFaq = (key: string) => {
+    setOpenFaqIndex(openFaqIndex === key ? null : key);
+  };
 
   const handleOpenBookingForm = (sub: { name: string; price: string; duration: string; image: string }) => {
     setSelectedSub(sub);
@@ -158,6 +233,14 @@ export default function LandingPage() {
         }
         body {
           font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        /* Hide scrollbar for clean horizontal scroll */
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
       `}</style>
 
@@ -201,98 +284,60 @@ export default function LandingPage() {
       <section className="max-w-6xl mx-auto px-4 pb-20">
         {!selectedCategory ? (
           <>
-            <div className="text-center mb-10">
+            <div className="text-center mb-8">
               <h2 className="font-serif text-2xl md:text-3xl font-bold text-neutral-900">
                 Portofolio & Kategori Foto
               </h2>
+              <p className="text-neutral-500 text-sm mt-1">Geser ke samping untuk melihat pilihan kategori lainnya ➔</p>
             </div>
 
-            {/* Carousel with Clear Category Photos */}
-            <div className="relative overflow-hidden py-6">
-              <div className="flex items-center justify-center gap-4 md:gap-6 transition-all duration-500 ease-out">
-                {categories.map((cat, idx) => {
-                  const isCenter = idx === activeIndex;
-                  return (
-                    <div
-                      key={cat.id}
-                      className={`transition-all duration-500 ease-in-out rounded-3xl overflow-hidden bg-neutral-900 text-white shadow-xl flex flex-col justify-between p-6 md:p-8 relative ${
-                        isCenter
-                          ? 'w-[90%] md:w-[550px] scale-100 opacity-100 z-20 ring-2 ring-amber-400/50'
-                          : 'w-[40%] md:w-[320px] scale-90 opacity-40 blur-[1px] z-10 hidden md:flex'
-                      }`}
-                      style={{ minHeight: '420px' }}
+            {/* Horizontal Scrolling Card Grid */}
+            <div className="flex overflow-x-auto no-scrollbar gap-6 py-6 px-4 snap-x snap-mandatory">
+              {categories.map((cat, idx) => (
+                <div
+                  key={cat.id}
+                  className="snap-center flex-shrink-0 w-[85%] md:w-[420px] rounded-3xl overflow-hidden bg-neutral-900 text-white shadow-xl flex flex-col justify-between p-6 md:p-8 relative"
+                  style={{ minHeight: '450px' }}
+                >
+                  <div className="absolute inset-0 z-0">
+                    <img
+                      src={cat.image}
+                      alt={cat.title}
+                      className="w-full h-full object-cover opacity-70 hover:scale-105 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
+                  </div>
+
+                  <div className="relative z-10 flex justify-between items-center">
+                    <span className="bg-amber-500 text-black font-semibold text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-md">
+                      Kategori Utama
+                    </span>
+                    <span className="text-xs text-amber-200 font-mono font-bold bg-black/40 px-2.5 py-1 rounded-md">
+                      0{idx + 1} / 0{categories.length}
+                    </span>
+                  </div>
+
+                  <div className="relative z-10 my-auto py-6">
+                    <h3 className="font-serif text-2xl md:text-3xl font-bold text-white mb-2 drop-shadow-md">
+                      {cat.title}
+                    </h3>
+                    <p className="text-neutral-200 text-sm md:text-base font-light mb-6 drop-shadow">
+                      {cat.tagline}
+                    </p>
+
+                    <button
+                      onClick={() => {
+                        setSelectedCategory(cat);
+                        setSelectedSub(null);
+                      }}
+                      className="w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 font-semibold py-3.5 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-amber-500/20 active:scale-[0.98]"
                     >
-                      <div className="absolute inset-0 z-0">
-                        <img
-                          src={cat.image}
-                          alt={cat.title}
-                          className="w-full h-full object-cover opacity-70 hover:scale-105 transition-transform duration-700"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10" />
-                      </div>
-
-                      <div className="relative z-10 flex justify-between items-center">
-                        <span className="bg-amber-500 text-black font-semibold text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-md">
-                          Kategori Utama
-                        </span>
-                        <span className="text-xs text-amber-200 font-mono font-bold bg-black/40 px-2.5 py-1 rounded-md">
-                          0{idx + 1} / 0{categories.length}
-                        </span>
-                      </div>
-
-                      <div className="relative z-10 my-auto py-6">
-                        <h3 className="font-serif text-2xl md:text-3xl font-bold text-white mb-2 drop-shadow-md">
-                          {cat.title}
-                        </h3>
-                        <p className="text-neutral-200 text-sm md:text-base font-light mb-6 drop-shadow">
-                          {cat.tagline}
-                        </p>
-
-                        <button
-                          onClick={() => {
-                            setSelectedCategory(cat);
-                            setSelectedSub(null);
-                          }}
-                          className="w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 font-semibold py-3.5 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-amber-500/20 active:scale-[0.98]"
-                        >
-                          <span>Pilih Kategori Ini</span>
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      <div className="relative z-10 flex justify-center gap-2 pt-2">
-                        {categories.map((_, dotIdx) => (
-                          <button
-                            key={dotIdx}
-                            onClick={() => setActiveIndex(dotIdx)}
-                            className={`h-2 rounded-full transition-all duration-300 ${
-                              dotIdx === activeIndex ? 'w-8 bg-amber-400' : 'w-2 bg-white/40'
-                            }`}
-                            aria-label={`Go to slide ${dotIdx + 1}`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="flex justify-center items-center gap-4 mt-8">
-                <button
-                  onClick={() => setActiveIndex((prev) => (prev === 0 ? categories.length - 1 : prev - 1))}
-                  className="p-3 rounded-full bg-neutral-100 hover:bg-amber-500 hover:text-white transition-colors text-neutral-800 shadow-md"
-                  aria-label="Previous slide"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setActiveIndex((prev) => (prev + 1) % categories.length)}
-                  className="p-3 rounded-full bg-neutral-100 hover:bg-amber-500 hover:text-white transition-colors text-neutral-800 shadow-md"
-                  aria-label="Next slide"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
+                      <span>Pilih Kategori Ini</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Potoin Aku Button */}
@@ -308,30 +353,72 @@ export default function LandingPage() {
               </button>
             </div>
 
-            {/* FAQ Section */}
-            <div className="mt-16 pt-12 border-t border-neutral-100 max-w-3xl mx-auto">
-              <div className="text-center mb-8">
+            {/* Complete FAQ Section with Accordion */}
+            <div className="mt-20 pt-12 border-t border-neutral-100 max-w-3xl mx-auto">
+              <div className="text-center mb-10">
                 <div className="inline-flex items-center gap-2 text-amber-700 bg-amber-50 px-3.5 py-1 rounded-full text-xs font-semibold mb-2">
                   <HelpCircle className="w-3.5 h-3.5" />
-                  FAQ
+                  FAQ "POTOIN KAMU"
                 </div>
                 <h3 className="font-serif text-2xl md:text-3xl font-bold text-neutral-900">
-                  Pertanyaan yang Sering Diajukan
+                  Yang sering ditanyain sebelum booking
                 </h3>
               </div>
 
-              <div className="space-y-4">
-                {faqs.map((faq, i) => (
-                  <div key={i} className="bg-amber-50/30 border border-amber-200/50 rounded-2xl p-6 shadow-sm">
-                    <h4 className="font-serif font-bold text-neutral-900 text-lg mb-2">{faq.q}</h4>
-                    <p className="text-neutral-600 text-sm leading-relaxed">{faq.a}</p>
+              <div className="space-y-8">
+                {faqsData.map((group, groupIdx) => (
+                  <div key={groupIdx} className="space-y-3">
+                    <h4 className="font-serif font-bold text-amber-800 text-lg border-b border-amber-200/50 pb-2">
+                      {group.category}
+                    </h4>
+                    <div className="space-y-3">
+                      {group.items.map((item, itemIdx) => {
+                        const uniqueKey = `${groupIdx}-${itemIdx}`;
+                        const isOpen = openFaqIndex === uniqueKey;
+                        return (
+                          <div 
+                            key={itemIdx} 
+                            className="bg-amber-50/20 border border-amber-200/50 rounded-2xl overflow-hidden shadow-sm transition-all"
+                          >
+                            <button
+                              onClick={() => toggleFaq(uniqueKey)}
+                              className="w-full text-left p-5 font-serif font-bold text-neutral-900 text-base md:text-lg flex justify-between items-center gap-4 hover:bg-amber-50/40 transition-colors"
+                            >
+                              <span>Q: {item.q}</span>
+                              {isOpen ? <ChevronUp className="w-5 h-5 text-amber-700 flex-shrink-0" /> : <ChevronDown className="w-5 h-5 text-amber-700 flex-shrink-0" />}
+                            </button>
+                            {isOpen && (
+                              <div className="px-5 pb-5 text-neutral-600 text-sm md:text-base leading-relaxed border-t border-amber-100/60 pt-3">
+                                <span className="font-bold text-neutral-800 mr-1">A:</span> {item.a}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 ))}
+              </div>
+
+              {/* FAQ CTA */}
+              <div className="mt-12 text-center bg-amber-50 border border-amber-200 rounded-3xl p-8 shadow-sm">
+                <p className="font-serif font-bold text-neutral-900 text-lg mb-3">
+                  Masih ada yang bingung? Langsung tanya aja, tim "potoin kamu" gak gigit kok 👉
+                </p>
+                <a
+                  href="https://wa.me/628135353498?text=Halo%20Kak,%20saya%20mau%20tanya-tanya%20tentang%20jasa%20fotografinya."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-md"
+                >
+                  <MessageCircle className="w-5 h-5 fill-white text-emerald-600" />
+                  <span>Chat WhatsApp Sekarang</span>
+                </a>
               </div>
             </div>
           </>
         ) : !selectedSub ? (
-          /* Focused Sub-Category View with Portfolio Photos */
+          /* Focused Sub-Category View */
           <div className="max-w-3xl mx-auto bg-amber-50/40 border border-amber-200/60 rounded-3xl p-6 md:p-10 shadow-xl">
             <button
               onClick={() => setSelectedCategory(null)}
@@ -357,7 +444,6 @@ export default function LandingPage() {
                   key={i}
                   className="bg-white rounded-2xl p-5 shadow-sm border border-neutral-100 hover:border-amber-300 transition-all duration-300 flex flex-col md:flex-row items-center gap-6"
                 >
-                  {/* Sub-Category Portfolio Thumbnail */}
                   <div className="relative w-full md:w-44 h-40 rounded-xl overflow-hidden flex-shrink-0 bg-neutral-100 shadow-md">
                     <img
                       src={sub.image}
