@@ -1,6 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { MessageCircle, ChevronRight, ArrowLeft, Check, Sparkles, Calendar, Clock, MapPin, ExternalLink, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState } from 'react';
+import { MessageCircle, ArrowLeft, Check, Calendar, Clock, MapPin, ExternalLink, HelpCircle, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react';
 
 const categories = [
   {
@@ -91,6 +91,9 @@ const categories = [
     ]
   }
 ];
+
+// Perulangan kategori untuk gulir tanpa batas ke samping
+const infiniteCategories = [...categories, ...categories, ...categories];
 
 const faqsData = [
   {
@@ -240,6 +243,13 @@ export default function LandingPage() {
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
+        @keyframes pulse-scale {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
+        .animate-scale-pulse {
+          animation: pulse-scale 2s ease-in-out infinite;
+        }
       `}</style>
 
       {/* Floating WhatsApp CTA */}
@@ -265,16 +275,11 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200/60 px-4 py-1.5 rounded-full text-xs font-semibold text-amber-800 mb-6 shadow-sm">
-          <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-          UMKM & Student Friendly Photography
-        </div>
-
         <h1 className="font-serif text-3xl md:text-5xl font-bold tracking-tight text-neutral-900 mb-4 leading-tight">
-          Buat kenangan yang gak bakal keulang.
+          Your Story, Captured.
         </h1>
         <p className="text-neutral-600 text-base md:text-lg max-w-2xl mx-auto font-light leading-relaxed">
-          Tanpa kaku, harga jujur, dan hasil yang bikin kamu senyum-senyum sendiri.
+          Jasa Fotografi Profesional untuk Segala Kebutuhanmu.
         </p>
       </header>
 
@@ -289,63 +294,57 @@ export default function LandingPage() {
               <p className="text-neutral-500 text-sm mt-1">Geser ke samping untuk melihat pilihan kategori lainnya ➔</p>
             </div>
 
-            {/* Horizontal Scrolling Card Grid */}
+            {/* Infinite Horizontal Scrolling Card Grid */}
             <div className="flex overflow-x-auto no-scrollbar gap-6 py-6 px-4 snap-x snap-mandatory">
-              {categories.map((cat, idx) => (
+              {infiniteCategories.map((cat, idx) => (
                 <div
-                  key={cat.id}
-                  className="snap-center flex-shrink-0 w-[85%] md:w-[420px] rounded-3xl overflow-hidden bg-neutral-900 text-white shadow-xl flex flex-col justify-between p-6 md:p-8 relative"
+                  key={`${cat.id}-${idx}`}
+                  className="snap-center flex-shrink-0 w-[85%] md:w-[420px] rounded-3xl overflow-hidden bg-neutral-900 text-white shadow-xl flex flex-col justify-end p-6 md:p-8 relative"
                   style={{ minHeight: '450px' }}
                 >
                   <div className="absolute inset-0 z-0">
                     <img
                       src={cat.image}
                       alt={cat.title}
-                      className="w-full h-full object-cover opacity-70 hover:scale-105 transition-transform duration-700"
+                      className="w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-transparent" />
                   </div>
 
-                  <div className="relative z-10 flex justify-between items-center">
-                    <span className="bg-amber-500 text-black font-semibold text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-md">
-                      Kategori Utama
-                    </span>
-                    <span className="text-xs text-amber-200 font-mono font-bold bg-black/40 px-2.5 py-1 rounded-md">
-                      0{idx + 1} / 0{categories.length}
-                    </span>
-                  </div>
-
-                  <div className="relative z-10 my-auto py-6">
-                    <h3 className="font-serif text-2xl md:text-3xl font-bold text-white mb-2 drop-shadow-md">
-                      {cat.title}
-                    </h3>
-                    <p className="text-neutral-200 text-sm md:text-base font-light mb-6 drop-shadow">
-                      {cat.tagline}
-                    </p>
-
-                    <button
-                      onClick={() => {
-                        setSelectedCategory(cat);
-                        setSelectedSub(null);
-                      }}
-                      className="w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 font-semibold py-3.5 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-amber-500/20 active:scale-[0.98]"
-                    >
-                      <span>Pilih Kategori Ini</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
+                  <div className="relative z-10 mt-auto flex flex-col justify-end">
+                    <div className="flex items-end justify-between gap-4">
+                      <div>
+                        <h3 className="font-serif text-2xl md:text-3xl font-bold text-white mb-1 drop-shadow-md">
+                          {cat.title}
+                        </h3>
+                        <p className="text-neutral-300 text-sm font-light drop-shadow">
+                          {cat.tagline}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedCategory(cat);
+                          setSelectedSub(null);
+                        }}
+                        className="bg-amber-500 hover:bg-amber-400 text-neutral-950 font-semibold py-2 px-4 rounded-xl text-xs flex items-center gap-1 shadow-lg transition-all flex-shrink-0"
+                      >
+                        <span>Pilih Kategori</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Potoin Aku Button */}
+            {/* Potoin Aku Button with Scale Pulse Animation */}
             <div className="text-center mt-12 mb-16">
               <button
                 onClick={() => {
                   setSelectedCategory(categories[0]);
                   setSelectedSub(categories[0].subcategories[0]);
                 }}
-                className="bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white font-semibold px-8 py-4 rounded-2xl shadow-xl transition-all duration-300 hover:scale-105 text-base tracking-wide"
+                className="bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white font-semibold px-8 py-4 rounded-2xl shadow-xl transition-all duration-300 text-base tracking-wide animate-scale-pulse"
               >
                 Potoin aku sekarang ✨
               </button>
@@ -416,7 +415,7 @@ export default function LandingPage() {
             </div>
           </>
         ) : !selectedSub ? (
-          /* Focused Sub-Category View */
+          /* Focused Sub-Category View (Price and duration tags removed) */
           <div className="max-w-3xl mx-auto bg-amber-50/40 border border-amber-200/60 rounded-3xl p-6 md:p-10 shadow-xl">
             <button
               onClick={() => setSelectedCategory(null)}
@@ -452,16 +451,7 @@ export default function LandingPage() {
 
                   <div className="flex-1 w-full">
                     <h4 className="font-serif text-xl font-bold text-neutral-900 mb-1">{sub.name}</h4>
-                    <p className="text-neutral-600 text-sm mb-3">{sub.desc}</p>
-                    <div className="flex flex-wrap items-center gap-3 mb-4">
-                      <span className="font-mono text-amber-700 font-bold text-sm bg-amber-50 px-3 py-1 rounded-lg">
-                        {sub.price}
-                      </span>
-                      <span className="text-xs text-neutral-500 flex items-center gap-1 bg-neutral-100 px-2.5 py-1 rounded-lg">
-                        <Clock className="w-3.5 h-3.5 text-neutral-500" />
-                        Estimasi: {sub.duration}
-                      </span>
-                    </div>
+                    <p className="text-neutral-600 text-sm mb-4">{sub.desc}</p>
                     <button
                       onClick={() => handleOpenBookingForm(sub)}
                       className="w-full md:w-auto bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 text-sm flex items-center justify-center gap-2 shadow-md"
