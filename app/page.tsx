@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { MessageCircle, ChevronLeft, ChevronRight, ArrowLeft, Check, Sparkles, Calendar, Clock, MapPin, ExternalLink, HelpCircle, Camera } from 'lucide-react';
+import { MessageCircle, ChevronLeft, ChevronRight, ArrowLeft, Check, Sparkles, Calendar, Clock, MapPin, ExternalLink, HelpCircle } from 'lucide-react';
 
 const categories = [
   {
@@ -10,9 +10,27 @@ const categories = [
     tagline: 'Prewed, wisuda, keluarga, & momen spesialmu.',
     image: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
     subcategories: [
-      { name: 'Potoin Prewedding', desc: 'Konsep romantis, natural, & estetik.', price: 'Rp 450.000', duration: '2-3 Jam' },
-      { name: 'Potoin Wisuda', desc: 'Abadikan momen kelulusanmu dengan gaya terbaik.', price: 'Rp 250.000', duration: '1-2 Jam' },
-      { name: 'Potoin Keluarga', desc: 'Hangat, kasual, dan penuh kebersamaan.', price: 'Rp 350.000', duration: '1-2 Jam' },
+      { 
+        name: 'Potoin Prewedding', 
+        desc: 'Konsep romantis, natural, & estetik.', 
+        price: 'Rp 450.000', 
+        duration: '2-3 Jam',
+        image: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80' 
+      },
+      { 
+        name: 'Potoin Wisuda', 
+        desc: 'Abadikan momen kelulusanmu dengan gaya terbaik.', 
+        price: 'Rp 250.000', 
+        duration: '1-2 Jam',
+        image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=800&q=80' 
+      },
+      { 
+        name: 'Potoin Keluarga', 
+        desc: 'Hangat, kasual, dan penuh kebersamaan.', 
+        price: 'Rp 350.000', 
+        duration: '1-2 Jam',
+        image: 'https://images.unsplash.com/photo-1609220136736-443140cffec6?auto=format&fit=crop&w=800&q=80' 
+      },
     ]
   },
   {
@@ -21,9 +39,27 @@ const categories = [
     tagline: 'Ulang tahun, event mini, gathering, hingga wedding.',
     image: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=800&q=80',
     subcategories: [
-      { name: 'Potoin Birthday / Party', desc: 'Dokumentasi keseruan acara ulang tahun.', price: 'Rp 300.000 / jam', duration: 'Sesuai Acara' },
-      { name: 'Potoin Gathering / Event', desc: 'Liputan profesional event kantor atau komunitas.', price: 'Rp 500.000 / acara', duration: 'Half Day / Full Day' },
-      { name: 'Potoin Wedding Intimate', desc: 'Liputan spesial hari pernikahan khidmat.', price: 'Rp 1.200.000', duration: 'Full Service' },
+      { 
+        name: 'Potoin Birthday / Party', 
+        desc: 'Dokumentasi keseruan acara ulang tahun.', 
+        price: 'Rp 300.000 / jam', 
+        duration: 'Sesuai Acara',
+        image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=800&q=80' 
+      },
+      { 
+        name: 'Potoin Gathering / Event', 
+        desc: 'Liputan profesional event kantor atau komunitas.', 
+        price: 'Rp 500.000 / acara', 
+        duration: 'Half Day / Full Day',
+        image: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80' 
+      },
+      { 
+        name: 'Potoin Wedding Intimate', 
+        desc: 'Liputan spesial hari pernikahan khidmat.', 
+        price: 'Rp 1.200.000', 
+        duration: 'Full Service',
+        image: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=800&q=80' 
+      },
     ]
   },
   {
@@ -32,18 +68,29 @@ const categories = [
     tagline: 'Foto produk, menu makanan GoFood, & headshot tim.',
     image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80',
     subcategories: [
-      { name: 'Potoin Jualanmu (Produk UMKM)', desc: 'Bikin pembeli langsung auto checkout!', price: 'Rp 15.000 / produk', duration: 'Fleksibel' },
-      { name: 'Potoin Menu-mu (Kuliner)', desc: 'Menu makanan & minuman bikin ngiler.', price: 'Rp 200.000 (10 menu)', duration: '1-2 Jam' },
-      { name: 'Potoin Dirimu Kerja (Headshot)', desc: 'Foto tim profesional & profil perusahaan.', price: 'Rp 150.000 / orang', duration: '30 Menit / orang' },
+      { 
+        name: 'Potoin Jualanmu (Produk UMKM)', 
+        desc: 'Bikin pembeli langsung auto checkout!', 
+        price: 'Rp 15.000 / produk', 
+        duration: 'Fleksibel',
+        image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80' 
+      },
+      { 
+        name: 'Potoin Menu-mu (Kuliner)', 
+        desc: 'Menu makanan & minuman bikin ngiler.', 
+        price: 'Rp 200.000 (10 menu)', 
+        duration: '1-2 Jam',
+        image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80' 
+      },
+      { 
+        name: 'Potoin Dirimu Kerja (Headshot)', 
+        desc: 'Foto tim profesional & profil perusahaan.', 
+        price: 'Rp 150.000 / orang', 
+        duration: '30 Menit / orang',
+        image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80' 
+      },
     ]
   }
-];
-
-const portfolioPhotos = [
-  { title: 'Prewedding Estetik', image: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80', category: 'Momenmu' },
-  { title: 'Wisuda Ceria', image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=800&q=80', category: 'Momenmu' },
-  { title: 'Produk UMKM', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80', category: 'Bisnismu' },
-  { title: 'Kuliner Menggiurkan', image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80', category: 'Bisnismu' },
 ];
 
 const faqs = [
@@ -61,7 +108,7 @@ const availableTimeSlots = [
 export default function LandingPage() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<null | typeof categories[0]>(null);
-  const [selectedSub, setSelectedSub] = useState<null | { name: string; price: string; duration: string }>(null);
+  const [selectedSub, setSelectedSub] = useState<null | { name: string; price: string; duration: string; image: string }>(null);
   
   const [bookingDate, setBookingDate] = useState('');
   const [bookingTime, setBookingTime] = useState(availableTimeSlots[0]);
@@ -75,7 +122,7 @@ export default function LandingPage() {
     return () => clearInterval(interval);
   }, [selectedCategory]);
 
-  const handleOpenBookingForm = (sub: { name: string; price: string; duration: string }) => {
+  const handleOpenBookingForm = (sub: { name: string; price: string; duration: string; image: string }) => {
     setSelectedSub(sub);
   };
 
@@ -163,7 +210,7 @@ export default function LandingPage() {
               </h2>
             </div>
 
-            {/* Carousel */}
+            {/* Carousel with Category Images */}
             <div className="relative overflow-hidden py-6">
               <div className="flex items-center justify-center gap-4 md:gap-6 transition-all duration-500 ease-out">
                 {categories.map((cat, idx) => {
@@ -183,7 +230,7 @@ export default function LandingPage() {
                           src={cat.image}
                           alt={cat.title}
                           fill
-                          className="object-cover opacity-40 hover:scale-105 transition-transform duration-700"
+                          className="object-cover opacity-50 hover:scale-105 transition-transform duration-700"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
                       </div>
@@ -265,41 +312,8 @@ export default function LandingPage() {
               </button>
             </div>
 
-            {/* Galeri Foto Portofolio */}
-            <div className="mt-16 pt-12 border-t border-neutral-100">
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center gap-2 text-amber-700 bg-amber-50 px-3.5 py-1 rounded-full text-xs font-semibold mb-2">
-                  <Camera className="w-3.5 h-3.5" />
-                  Galeri Unggulan
-                </div>
-                <h3 className="font-serif text-2xl md:text-3xl font-bold text-neutral-900">
-                  Hasil Karya & Momen Pilihan
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-                {portfolioPhotos.map((photo, i) => (
-                  <div key={i} className="group relative rounded-2xl overflow-hidden shadow-md aspect-[4/5] bg-neutral-100">
-                    <Image
-                      src={photo.image}
-                      alt={photo.title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90 group-hover:opacity-100 transition-opacity" />
-                    <div className="absolute bottom-4 left-4 right-4 text-white">
-                      <span className="text-[10px] uppercase tracking-wider bg-amber-500 text-neutral-950 font-bold px-2.5 py-0.5 rounded-full">
-                        {photo.category}
-                      </span>
-                      <h4 className="font-serif font-bold text-base mt-1.5">{photo.title}</h4>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             {/* FAQ Section */}
-            <div className="mt-20 pt-12 border-t border-neutral-100 max-w-3xl mx-auto">
+            <div className="mt-16 pt-12 border-t border-neutral-100 max-w-3xl mx-auto">
               <div className="text-center mb-8">
                 <div className="inline-flex items-center gap-2 text-amber-700 bg-amber-50 px-3.5 py-1 rounded-full text-xs font-semibold mb-2">
                   <HelpCircle className="w-3.5 h-3.5" />
@@ -321,7 +335,7 @@ export default function LandingPage() {
             </div>
           </>
         ) : !selectedSub ? (
-          /* Focused Sub-Category View */
+          /* Focused Sub-Category View with Portfolio Images per Sub-category */
           <div className="max-w-3xl mx-auto bg-amber-50/40 border border-amber-200/60 rounded-3xl p-6 md:p-10 shadow-xl">
             <button
               onClick={() => setSelectedCategory(null)}
@@ -333,7 +347,7 @@ export default function LandingPage() {
 
             <div className="border-b border-amber-200/60 pb-6 mb-8">
               <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-3 py-1 rounded-full uppercase tracking-wider">
-                Sub-Kategori & Paket Harga
+                Sub-Kategori & Portofolio Paket
               </span>
               <h2 className="font-serif text-3xl md:text-4xl font-bold text-neutral-900 mt-3 mb-2">
                 {selectedCategory.title}
@@ -341,16 +355,26 @@ export default function LandingPage() {
               <p className="text-neutral-600 text-base">{selectedCategory.tagline}</p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               {selectedCategory.subcategories.map((sub, i) => (
                 <div
                   key={i}
-                  className="bg-white rounded-2xl p-6 shadow-sm border border-neutral-100 hover:border-amber-300 transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                  className="bg-white rounded-2xl p-5 shadow-sm border border-neutral-100 hover:border-amber-300 transition-all duration-300 flex flex-col md:flex-row items-center gap-6"
                 >
-                  <div>
-                    <h4 className="font-serif text-lg font-bold text-neutral-900 mb-1">{sub.name}</h4>
-                    <p className="text-neutral-600 text-sm mb-2">{sub.desc}</p>
-                    <div className="flex flex-wrap items-center gap-3">
+                  {/* Sub-Category Portfolio Thumbnail */}
+                  <div className="relative w-full md:w-40 h-40 rounded-xl overflow-hidden flex-shrink-0 bg-neutral-100 shadow-inner">
+                    <Image
+                      src={sub.image}
+                      alt={sub.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+
+                  <div className="flex-1 w-full">
+                    <h4 className="font-serif text-xl font-bold text-neutral-900 mb-1">{sub.name}</h4>
+                    <p className="text-neutral-600 text-sm mb-3">{sub.desc}</p>
+                    <div className="flex flex-wrap items-center gap-3 mb-4">
                       <span className="font-mono text-amber-700 font-bold text-sm bg-amber-50 px-3 py-1 rounded-lg">
                         {sub.price}
                       </span>
@@ -359,20 +383,20 @@ export default function LandingPage() {
                         Estimasi: {sub.duration}
                       </span>
                     </div>
+                    <button
+                      onClick={() => handleOpenBookingForm(sub)}
+                      className="w-full md:w-auto bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 text-sm flex items-center justify-center gap-2 shadow-md"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>Pilih Paket Ini</span>
+                    </button>
                   </div>
-                  <button
-                    onClick={() => handleOpenBookingForm(sub)}
-                    className="bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 text-sm flex items-center justify-center gap-2 shadow-md"
-                  >
-                    <Check className="w-4 h-4" />
-                    <span>Pilih Paket Ini</span>
-                  </button>
                 </div>
               ))}
             </div>
           </div>
         ) : (
-          /* Booking & Schedule Slot Form */
+          /* Booking & Schedule Slot Form with Preview */
           <div className="max-w-2xl mx-auto bg-white border border-amber-200/80 rounded-3xl p-6 md:p-10 shadow-xl">
             <button
               onClick={() => setSelectedSub(null)}
@@ -382,14 +406,19 @@ export default function LandingPage() {
               Kembali ke Daftar Paket
             </button>
 
-            <div className="border-b border-neutral-100 pb-5 mb-6">
-              <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-3 py-1 rounded-full uppercase tracking-wider">
-                Konfirmasi Jadwal & Lokasi
-              </span>
-              <h3 className="font-serif text-2xl md:text-3xl font-bold text-neutral-900 mt-2">
-                {selectedSub.name}
-              </h3>
-              <p className="text-amber-800 font-bold text-sm mt-1">{selectedSub.price} • Durasi: {selectedSub.duration}</p>
+            <div className="flex items-center gap-4 border-b border-neutral-100 pb-5 mb-6">
+              <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-neutral-100">
+                <Image src={selectedSub.image} alt={selectedSub.name} fill className="object-cover" />
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                  Konfirmasi Jadwal
+                </span>
+                <h3 className="font-serif text-xl font-bold text-neutral-900 mt-1">
+                  {selectedSub.name}
+                </h3>
+                <p className="text-amber-800 font-bold text-xs">{selectedSub.price} • {selectedSub.duration}</p>
+              </div>
             </div>
 
             <form onSubmit={handleFinalSubmitWhatsApp} className="space-y-5">
