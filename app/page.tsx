@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { MessageCircle, ArrowLeft, Check, Sparkles, Calendar, Clock, MapPin, ExternalLink, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { MessageCircle, ChevronRight, ArrowLeft, Check, Sparkles, Calendar, Clock, MapPin, ExternalLink, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
 const categories = [
   {
@@ -123,7 +123,7 @@ const faqsData = [
       },
       {
         q: 'Kok murah? Hasilnya bagus gak?',
-        a: 'Murah karena kita pake sistem paket durasi pendek & efisien, bukan karena hasil asal-asalan. Cek aja hasil "potoin kamu" di IG @potoin.kamu buat buktiin.'
+        a: 'Murah karena kita pake paket durasi pendek & efisien, bukan karena hasil asal-asalan. Cek aja hasil "potoin kamu" di IG @potoin.kamu buat buktiin.'
       },
       {
         q: 'Bisa nego gak? Budget aku pas-pasan.',
@@ -189,7 +189,6 @@ export default function LandingPage() {
   const [bookingTime, setBookingTime] = useState(availableTimeSlots[0]);
   const [locationText, setLocationText] = useState('');
 
-  // Accordion state untuk FAQ
   const [openFaqIndex, setOpenFaqIndex] = useState<string | null>(null);
 
   const toggleFaq = (key: string) => {
@@ -234,7 +233,6 @@ export default function LandingPage() {
         body {
           font-family: 'Plus Jakarta Sans', sans-serif;
         }
-        /* Hide scrollbar for clean horizontal scroll */
         .no-scrollbar::-webkit-scrollbar {
           display: none;
         }
