@@ -53,7 +53,7 @@ export default function LandingPage() {
 
   const handleWhatsAppOrder = (itemTitle: string) => {
     const message = encodeURIComponent(`Halo Kak, saya mau konsultasi dan pesan layanan: *${itemTitle}* di Potoin Kamu.`);
-    window.open(`https://wa.me/6281234567890?text=${message}`, '_blank');
+    window.open(`https://wa.me/628135353498?text=${message}`, '_blank');
   };
 
   return (
@@ -73,7 +73,7 @@ export default function LandingPage() {
 
       {/* Floating WhatsApp CTA */}
       <a
-        href="https://wa.me/6281234567890?text=Halo%20Kak,%20saya%20mau%20konsultasi%20dulu%20tentang%20jasa%20fotografinya."
+        href="https://wa.me/628135353498?text=Halo%20Kak,%20saya%20mau%20konsultasi%20dulu%20tentang%20jasa%20fotografinya."
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-emerald-600 text-white px-5 py-3.5 rounded-full shadow-2xl hover:bg-emerald-700 transition-all duration-300 hover:scale-105 font-medium text-sm md:text-base border border-emerald-500/30"
