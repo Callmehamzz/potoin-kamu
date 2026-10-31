@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { MessageCircle, ChevronLeft, ChevronRight, ArrowLeft, Check, Sparkles, Calendar, Clock, MapPin, ExternalLink, HelpCircle } from 'lucide-react';
 
 const categories = [
@@ -177,12 +176,10 @@ export default function LandingPage() {
       <header className="max-w-5xl mx-auto px-6 pt-12 pb-8 text-center">
         <div className="flex justify-center mb-6">
           <div className="relative h-14 w-48">
-            <Image
+            <img
               src="/logo.png"
               alt="Potoin Kamu Logo"
-              fill
-              className="object-contain"
-              priority
+              className="object-contain h-full w-full"
             />
           </div>
         </div>
@@ -210,7 +207,7 @@ export default function LandingPage() {
               </h2>
             </div>
 
-            {/* Carousel with Category Images */}
+            {/* Carousel with Clear Category Photos */}
             <div className="relative overflow-hidden py-6">
               <div className="flex items-center justify-center gap-4 md:gap-6 transition-all duration-500 ease-out">
                 {categories.map((cat, idx) => {
@@ -226,29 +223,28 @@ export default function LandingPage() {
                       style={{ minHeight: '420px' }}
                     >
                       <div className="absolute inset-0 z-0">
-                        <Image
+                        <img
                           src={cat.image}
                           alt={cat.title}
-                          fill
-                          className="object-cover opacity-50 hover:scale-105 transition-transform duration-700"
+                          className="w-full h-full object-cover opacity-70 hover:scale-105 transition-transform duration-700"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10" />
                       </div>
 
                       <div className="relative z-10 flex justify-between items-center">
-                        <span className="bg-amber-500/90 text-black font-semibold text-xs px-3 py-1 rounded-full uppercase tracking-wider">
+                        <span className="bg-amber-500 text-black font-semibold text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-md">
                           Kategori Utama
                         </span>
-                        <span className="text-xs text-amber-200/80 font-mono">
+                        <span className="text-xs text-amber-200 font-mono font-bold bg-black/40 px-2.5 py-1 rounded-md">
                           0{idx + 1} / 0{categories.length}
                         </span>
                       </div>
 
                       <div className="relative z-10 my-auto py-6">
-                        <h3 className="font-serif text-2xl md:text-3xl font-bold text-white mb-2">
+                        <h3 className="font-serif text-2xl md:text-3xl font-bold text-white mb-2 drop-shadow-md">
                           {cat.title}
                         </h3>
-                        <p className="text-neutral-300 text-sm md:text-base font-light mb-6">
+                        <p className="text-neutral-200 text-sm md:text-base font-light mb-6 drop-shadow">
                           {cat.tagline}
                         </p>
 
@@ -335,7 +331,7 @@ export default function LandingPage() {
             </div>
           </>
         ) : !selectedSub ? (
-          /* Focused Sub-Category View with Portfolio Images per Sub-category */
+          /* Focused Sub-Category View with Portfolio Photos */
           <div className="max-w-3xl mx-auto bg-amber-50/40 border border-amber-200/60 rounded-3xl p-6 md:p-10 shadow-xl">
             <button
               onClick={() => setSelectedCategory(null)}
@@ -362,12 +358,11 @@ export default function LandingPage() {
                   className="bg-white rounded-2xl p-5 shadow-sm border border-neutral-100 hover:border-amber-300 transition-all duration-300 flex flex-col md:flex-row items-center gap-6"
                 >
                   {/* Sub-Category Portfolio Thumbnail */}
-                  <div className="relative w-full md:w-40 h-40 rounded-xl overflow-hidden flex-shrink-0 bg-neutral-100 shadow-inner">
-                    <Image
+                  <div className="relative w-full md:w-44 h-40 rounded-xl overflow-hidden flex-shrink-0 bg-neutral-100 shadow-md">
+                    <img
                       src={sub.image}
                       alt={sub.name}
-                      fill
-                      className="object-cover"
+                      className="w-full h-full object-cover"
                     />
                   </div>
 
@@ -396,7 +391,7 @@ export default function LandingPage() {
             </div>
           </div>
         ) : (
-          /* Booking & Schedule Slot Form with Preview */
+          /* Booking & Schedule Slot Form */
           <div className="max-w-2xl mx-auto bg-white border border-amber-200/80 rounded-3xl p-6 md:p-10 shadow-xl">
             <button
               onClick={() => setSelectedSub(null)}
@@ -407,8 +402,8 @@ export default function LandingPage() {
             </button>
 
             <div className="flex items-center gap-4 border-b border-neutral-100 pb-5 mb-6">
-              <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-neutral-100">
-                <Image src={selectedSub.image} alt={selectedSub.name} fill className="object-cover" />
+              <div className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-neutral-100 shadow">
+                <img src={selectedSub.image} alt={selectedSub.name} className="w-full h-full object-cover" />
               </div>
               <div>
                 <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
