@@ -1,6 +1,6 @@
 'use client';
-import { useState } from 'react';
-import { MessageCircle, ArrowLeft, Check, Calendar, Clock, MapPin, ExternalLink, HelpCircle, ChevronDown, ChevronUp, ChevronRight, Sparkles, Users, Layers } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { MessageCircle, ArrowLeft, Check, Calendar, Clock, MapPin, ExternalLink, HelpCircle, ChevronDown, ChevronUp, ChevronRight, Sparkles } from 'lucide-react';
 
 const categories = [
   {
@@ -137,17 +137,28 @@ const categories = [
   }
 ];
 
+// Perbanyak array kategori untuk loop infinite scroll mulus tanpa batas
+const infiniteCategories = [...categories, ...categories, ...categories, ...categories, ...categories];
+
 const faqsData = [
   {
     category: '1. BOOKING & JADWAL',
     items: [
       {
         q: 'Gimana cara booking di "potoin kamu"?',
-        a: 'Gampang! Tinggal klik tombol "Potoin Aku!" atau kalkulator interaktif di atas, pilih paket yang kamu mau, atau langsung WhatsApp kita.'
+        a: 'Gampang! Tinggal klik tombol "Potoin Aku!" atau kalkulator interaktif di atas, pilih paket yang kamu mau, atau langsung WhatsApp kita. Ceritain mau potoin apa, tanggal berapa, dan di mana.'
       },
       {
         q: 'Harus DP berapa? H- berapa baru boleh booking?',
-        a: 'DP 50% buat kunci tanggal kamu ya. Sisa pelunasan pas hari H selesai sesi foto.'
+        a: 'DP 50% buat kunci tanggal kamu ya. Sisa pelunasan pas hari H selesai sesi foto. Booking bisa dari H-3 bulan sampai H-7.'
+      },
+      {
+        q: 'Bisa gak sih dadakan? Besok mau dipotoin.',
+        a: 'Bisa banget kalau jadwal kita kosong! Coba DM aja dulu. Kalau urgent/besok ada charge +Rp 100rb ya.'
+      },
+      {
+        q: 'Kalau ujan/cuaca jelek gimana?',
+        a: 'Tenang, bisa reschedule gratis 1x kok. Atau kita pindah ke lokasi indoor/cafe.'
       }
     ]
   },
@@ -156,11 +167,57 @@ const faqsData = [
     items: [
       {
         q: 'Itu harga "mulai dari", nanti bisa nambah apa aja?',
-        a: 'Bisa nambah jam, nambah foto edit, atau request cetak album. Semua diinfoin di awal secara transparan.'
+        a: 'Bisa nambah kalau: lokasi di luar Malang Kota, nambah jam +Rp 150rb/jam, nambah foto edit +Rp 15rb/foto, atau request cetak album. Semua transparan di awal.'
+      },
+      {
+        q: 'Kok murah? Hasilnya bagus gak?',
+        a: 'Murah karena kita pake paket durasi pendek & efisien, bukan karena hasil asal-asalan. Cek aja hasil "potoin kamu" di IG @potoin.kamu.'
+      },
+      {
+        q: 'Bisa nego gak? Budget aku pas-pasan.',
+        a: 'Daripada nego, mending kamu ambil paket paling dasar terus nambah add-on dikit-dikit sesuai budget, atau pakai paket custom Semaumu.'
       },
       {
         q: 'File aslinya dikasih semua gak?',
-        a: 'Dikasih dong! Semua paket udah dapet bonus file original via Google Drive.'
+        a: 'Dikasih dong! Semua paket udah dapet BONUS semua file original via Google Drive.'
+      }
+    ]
+  },
+  {
+    category: '3. TEKNIS SESI FOTO',
+    items: [
+      {
+        q: 'Lokasinya di mana aja? Bisa di rumah?',
+        a: 'Bisa banget! Outdoor area Malang Kota, Home visit (kita dateng ke rumahmu), atau Studio partner.'
+      },
+      {
+        q: 'Outfit/bajunya harus gimana? Diajarin pose gak?',
+        a: 'Pakai yang bikin kamu pede! Nanti H-7 kita kirim guide warna & outfit. Pas sesi juga bakal kita arahin posenya.'
+      },
+      {
+        q: 'Aku malu kamera, bisa gak sih?',
+        a: 'Justru itu tugas kita! Kita ngobrol-ngobrol dan becanda dulu biar kamu rileks.'
+      },
+      {
+        q: 'Berapa lama fotonya jadi?',
+        a: 'File original H+1 dikirim. File edit: 3-7 hari kerja tergantung paket.'
+      }
+    ]
+  },
+  {
+    category: '4. LAIN-LAIN',
+    items: [
+      {
+        q: 'Min berapa orang kalau mau foto grup?',
+        a: 'Gak ada minimal! Sendiri bisa, ber-30 juga hayuk.'
+      },
+      {
+        q: 'Bisa bawa properti sendiri?',
+        a: 'Boleh banget! Balon, buket, topi toga, properti jualanmu, bawa aja.'
+      },
+      {
+        q: '"potoin kamu" melayani luar kota Malang gak?',
+        a: 'Melayani! Area Batu, Surabaya, dll bisa dengan tambahan transport & akomodasi.'
       }
     ]
   }
@@ -176,7 +233,7 @@ export default function LandingPage() {
   const [selectedCategory, setSelectedCategory] = useState<null | typeof categories[0]>(null);
   const [selectedSub, setSelectedSub] = useState<null | typeof categories[0]['subcategories'][0]>(null);
   
-  // State untuk Kalkulator / Form Wizard Interaktif "Potoin Aku Sekarang"
+  // Wizard / Kalkulator State
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
   const [wizardCatId, setWizardCatId] = useState(categories[0].id);
@@ -193,6 +250,28 @@ export default function LandingPage() {
   const [selectedPackageForBooking, setSelectedPackageForBooking] = useState<{ name: string; price: string; spec: string } | null>(null);
 
   const [openFaqIndex, setOpenFaqIndex] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Set posisi awal scroll di tengah agar infinite scroll bisa ke kiri dan kanan tanpa batas
+  useEffect(() => {
+    if (scrollRef.current) {
+      const totalWidth = scrollRef.current.scrollWidth;
+      scrollRef.current.scrollLeft = totalWidth / 2;
+    }
+  }, []);
+
+  // Fungsi infinite scroll loop mulus tanpa glitch/loncat
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, scrollWidth } = scrollRef.current;
+    const oneFifth = scrollWidth / 5;
+
+    if (scrollLeft < oneFifth) {
+      scrollRef.current.scrollLeft += oneFifth * 2;
+    } else if (scrollLeft > oneFifth * 4) {
+      scrollRef.current.scrollLeft -= oneFifth * 2;
+    }
+  };
 
   const toggleFaq = (key: string) => {
     setOpenFaqIndex(openFaqIndex === key ? null : key);
@@ -253,9 +332,7 @@ export default function LandingPage() {
     window.open(`https://wa.me/628135353498?text=${message}`, '_blank');
   };
 
-  // Mencari sub-kategori aktif di wizard
   const activeWizardCat = categories.find(c => c.id === wizardCatId) || categories[0];
-  const activeWizardSub = activeWizardCat.subcategories.find(s => s.id === wizardSubId) || activeWizardCat.subcategories[0];
 
   return (
     <main className="min-h-screen bg-white text-neutral-900 font-sans selection:bg-amber-200">
@@ -328,9 +405,13 @@ export default function LandingPage() {
               <p className="text-neutral-500 text-sm mt-1">Geser ke samping untuk melihat pilihan kategori lainnya ➔</p>
             </div>
 
-            {/* Responsive Infinite-feeling Scroll Grid (No glitching) */}
-            <div className="flex overflow-x-auto no-scrollbar gap-6 py-6 px-4 snap-x snap-mandatory scroll-smooth">
-              {[...categories, ...categories].map((cat, idx) => (
+            {/* Seamless Infinite Horizontal Scrolling Card Grid */}
+            <div 
+              ref={scrollRef}
+              onScroll={handleScroll}
+              className="flex overflow-x-auto no-scrollbar gap-6 py-6 px-4 snap-x snap-mandatory scroll-smooth"
+            >
+              {infiniteCategories.map((cat, idx) => (
                 <div
                   key={`${cat.id}-${idx}`}
                   className="snap-center flex-shrink-0 w-[85%] md:w-[420px] rounded-3xl overflow-hidden bg-neutral-900 text-white shadow-xl flex flex-col justify-end p-6 md:p-8 relative"
@@ -381,7 +462,7 @@ export default function LandingPage() {
               </button>
             </div>
 
-            {/* Complete FAQ Section with Accordion */}
+            {/* Complete FAQ Section with Accordion (All 4 categories) */}
             <div className="mt-20 pt-12 border-t border-neutral-100 max-w-3xl mx-auto">
               <div className="text-center mb-10">
                 <div className="inline-flex items-center gap-2 text-amber-700 bg-amber-50 px-3.5 py-1 rounded-full text-xs font-semibold mb-2">
@@ -427,10 +508,26 @@ export default function LandingPage() {
                   </div>
                 ))}
               </div>
+
+              {/* FAQ CTA */}
+              <div className="mt-12 text-center bg-amber-50 border border-amber-200 rounded-3xl p-8 shadow-sm">
+                <p className="font-serif font-bold text-neutral-900 text-lg mb-3">
+                  Masih ada yang bingung? Langsung tanya aja, tim "potoin kamu" gak gigit kok 👉
+                </p>
+                <a
+                  href="https://wa.me/628135353498?text=Halo%20Kak,%20saya%20mau%20tanya-tanya%20tentang%20jasa%20fotografinya."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-md"
+                >
+                  <MessageCircle className="w-5 h-5 fill-white text-emerald-600" />
+                  <span>Chat WhatsApp Sekarang</span>
+                </a>
+              </div>
             </div>
           </>
         ) : !selectedSub ? (
-          /* Sub-Category View (No prices or duration tags on sub-category cards) */
+          /* Sub-Category View */
           <div className="max-w-3xl mx-auto bg-amber-50/40 border border-amber-200/60 rounded-3xl p-6 md:p-10 shadow-xl">
             <button
               onClick={() => setSelectedCategory(null)}
@@ -480,7 +577,7 @@ export default function LandingPage() {
             </div>
           </div>
         ) : !selectedPackageForBooking ? (
-          /* Detailed 4 Cards View (Aja, Puas, Total, Semaumu) */
+          /* Detailed 4 Cards View */
           <div className="max-w-4xl mx-auto bg-amber-50/40 border border-amber-200/60 rounded-3xl p-6 md:p-10 shadow-xl">
             <button
               onClick={() => setSelectedSub(null)}
@@ -540,7 +637,7 @@ export default function LandingPage() {
                         className="w-full bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white font-semibold py-3 px-4 rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow"
                       >
                         <Check className="w-4 h-4" />
-                        <span>Pilih {pkg.name.split(' ')[0]} {pkg.name.split(' ')[1]}</span>
+                        <span>Pilih Paket Ini</span>
                       </button>
                     ) : (
                       <a
@@ -559,7 +656,7 @@ export default function LandingPage() {
             </div>
           </div>
         ) : (
-          /* Final Booking Form with Date & Schedule Selection */
+          /* Final Booking Form */
           <div className="max-w-2xl mx-auto bg-white border border-amber-200/80 rounded-3xl p-6 md:p-10 shadow-xl">
             <button
               onClick={() => setSelectedPackageForBooking(null)}
