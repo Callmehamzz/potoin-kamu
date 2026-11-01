@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, ArrowLeft, Check, Calendar, Clock, MapPin, ExternalLink, HelpCircle, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react';
 
 const categories = [
@@ -137,25 +137,28 @@ const categories = [
   }
 ];
 
+// Perbanyak array kategori agar card bisa digeser berulang terus-menerus tanpa batas
+const infiniteCategories = [...categories, ...categories, ...categories, ...categories, ...categories];
+
 const faqsData = [
   {
     category: '1. BOOKING & JADWAL',
     items: [
       {
         q: 'Gimana cara booking di "potoin kamu"?',
-        a: 'Gampang! Tinggal klik tombol "Potoin Aku!" atau kalkulator interaktif di atas, pilih paket yang kamu mau, atau langsung WhatsApp kita.'
+        a: 'Gampang! Tinggal klik tombol "Potoin Aku!" atau kalkulator interaktif di atas, pilih paket yang kamu mau, atau langsung WhatsApp kita. Ceritain mau potoin apa, tanggal berapa, dan di mana.'
       },
       {
         q: 'Harus DP berapa? H- berapa baru boleh booking?',
-        a: 'DP 50% buat kunci tanggal kamu ya. Sisa pelunasan pas hari H selesai sesi foto.'
+        a: 'DP 50% buat kunci tanggal kamu ya. Sisa pelunasan pas hari H selesai sesi foto. Booking bisa dari H-3 bulan sampai H-7.'
       },
       {
         q: 'Bisa gak sih dadakan? Besok mau dipotoin.',
-        a: 'Bisa banget kalau jadwal kita kosong! Coba DM aja dulu.'
+        a: 'Bisa banget kalau jadwal kita kosong! Coba DM aja dulu. Kalau urgent/besok ada charge +Rp 100rb ya.'
       },
       {
         q: 'Kalau ujan/cuaca jelek gimana?',
-        a: 'Tenang, bisa reschedule gratis 1x kok atau pindah lokasi indoor.'
+        a: 'Tenang, bisa reschedule gratis 1x kok. Atau kita pindah ke lokasi indoor/cafe.'
       }
     ]
   },
@@ -164,11 +167,19 @@ const faqsData = [
     items: [
       {
         q: 'Itu harga "mulai dari", nanti bisa nambah apa aja?',
-        a: 'Bisa nambah jam, nambah foto edit, atau request cetak album. Semua transparan di awal.'
+        a: 'Bisa nambah kalau: lokasi di luar Malang Kota, nambah jam +Rp 150rb/jam, nambah foto edit +Rp 15rb/foto, atau request cetak album. Semua transparan di awal.'
+      },
+      {
+        q: 'Kok murah? Hasilnya bagus gak?',
+        a: 'Murah karena kita pake paket durasi pendek & efisien, bukan karena hasil asal-asalan. Cek aja hasil "potoin kamu" di IG @potoin.kamu.'
+      },
+      {
+        q: 'Bisa nego gak? Budget aku pas-pasan.',
+        a: 'Daripada nego, mending kamu ambil paket paling dasar terus nambah add-on dikit-dikit sesuai budget, atau pakai paket custom Semaumu.'
       },
       {
         q: 'File aslinya dikasih semua gak?',
-        a: 'Dikasih dong! Semua paket udah dapet bonus file original via Google Drive.'
+        a: 'Dikasih dong! Semua paket udah dapet BONUS semua file original via Google Drive.'
       }
     ]
   },
@@ -177,11 +188,19 @@ const faqsData = [
     items: [
       {
         q: 'Lokasinya di mana aja? Bisa di rumah?',
-        a: 'Bisa outdoor, home visit ke rumahmu, atau studio partner.'
+        a: 'Bisa banget! Outdoor area Malang Kota, Home visit (kita dateng ke rumahmu), atau Studio partner.'
+      },
+      {
+        q: 'Outfit/bajunya harus gimana? Diajarin pose gak?',
+        a: 'Pakai yang bikin kamu pede! Nanti H-7 kita kirim guide warna & outfit. Pas sesi juga bakal kita arahin posenya.'
       },
       {
         q: 'Aku malu kamera, bisa gak sih?',
-        a: 'Justru itu tugas kita! Kita ngobrol-ngobrol dulu biar rileks.'
+        a: 'Justru itu tugas kita! Kita ngobrol-ngobrol dan becanda dulu biar kamu rileks.'
+      },
+      {
+        q: 'Berapa lama fotonya jadi?',
+        a: 'File original H+1 dikirim. File edit: 3-7 hari kerja tergantung paket.'
       }
     ]
   },
@@ -189,8 +208,16 @@ const faqsData = [
     category: '4. LAIN-LAIN',
     items: [
       {
+        q: 'Min berapa orang kalau mau foto grup?',
+        a: 'Gak ada minimal! Sendiri bisa, ber-30 juga hayuk.'
+      },
+      {
+        q: 'Bisa bawa properti sendiri?',
+        a: 'Boleh banget! Balon, buket, topi toga, properti jualanmu, bawa aja.'
+      },
+      {
         q: '"potoin kamu" melayani luar kota Malang gak?',
-        a: 'Melayani! Area Batu, Surabaya, dll dengan tambahan transport.'
+        a: 'Melayani! Area Batu, Surabaya, dll bisa dengan tambahan transport & akomodasi.'
       }
     ]
   }
@@ -225,10 +252,26 @@ export default function LandingPage() {
   const [openFaqIndex, setOpenFaqIndex] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Fungsi tombol navigasi geser manual yang stabil (anti-loncat)
+  // Set posisi awal scroll di tengah agar infinite scroll bisa ke kiri dan kanan tanpa batas
+  useEffect(() => {
+    if (scrollRef.current) {
+      const totalWidth = scrollRef.current.scrollWidth;
+      scrollRef.current.scrollLeft = totalWidth / 2;
+    }
+  }, []);
+
+  // Fungsi infinite loop manual yang stabil saat digeser atau ditekan tombol panah
   const scrollCard = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
-      const scrollAmount = 350;
+      const scrollAmount = 380;
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      
+      if (direction === 'right' && scrollLeft >= scrollWidth - clientWidth - 150) {
+        scrollRef.current.scrollTo({ left: scrollWidth / 2, behavior: 'auto' });
+      } else if (direction === 'left' && scrollLeft <= 150) {
+        scrollRef.current.scrollTo({ left: scrollWidth / 2, behavior: 'auto' });
+      }
+
       scrollRef.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
@@ -365,10 +408,10 @@ export default function LandingPage() {
               <h2 className="font-serif text-2xl md:text-3xl font-bold text-neutral-900">
                 Portofolio & Kategori Foto
               </h2>
-              <p className="text-neutral-500 text-sm mt-1">Geser atau gunakan tombol panah di bawah untuk melihat pilihan kategori ➔</p>
+              <p className="text-neutral-500 text-sm mt-1">Geser tanpa batas ke samping untuk melihat pilihan kategori lainnya ➔</p>
             </div>
 
-            {/* Stable Horizontal Scroll Container with Navigation Arrows */}
+            {/* Infinite Loop Horizontal Scrolling Card Grid with Navigation Arrows */}
             <div className="relative max-w-5xl mx-auto">
               <button 
                 onClick={() => scrollCard('left')}
@@ -388,9 +431,9 @@ export default function LandingPage() {
                 ref={scrollRef}
                 className="flex overflow-x-auto no-scrollbar gap-6 py-6 px-4 snap-x snap-mandatory scroll-smooth"
               >
-                {categories.map((cat) => (
+                {infiniteCategories.map((cat, idx) => (
                   <div
-                    key={cat.id}
+                    key={`${cat.id}-${idx}`}
                     className="snap-center flex-shrink-0 w-[85%] md:w-[380px] rounded-3xl overflow-hidden bg-neutral-900 text-white shadow-xl flex flex-col justify-end p-6 md:p-8 relative"
                     style={{ minHeight: '450px' }}
                   >
