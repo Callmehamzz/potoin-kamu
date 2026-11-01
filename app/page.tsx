@@ -137,8 +137,8 @@ const categories = [
   }
 ];
 
-// Perbanyak array kategori agar card bisa digeser berulang terus-menerus tanpa batas
-const infiniteCategories = [...categories, ...categories, ...categories, ...categories, ...categories];
+// Menggunakan array yang diperbanyak hingga 20 kali lipat agar sangat panjang dan tidak pernah habis dirasakan user
+const infiniteCategories = Array(20).fill(categories).flat();
 
 const faqsData = [
   {
@@ -252,7 +252,7 @@ export default function LandingPage() {
   const [openFaqIndex, setOpenFaqIndex] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Set posisi awal scroll di tengah agar infinite scroll bisa ke kiri dan kanan tanpa batas
+  // Set posisi awal scroll di tengah agar pengguna bisa geser ke kiri/kanan sejauh apa pun secara bebas
   useEffect(() => {
     if (scrollRef.current) {
       const totalWidth = scrollRef.current.scrollWidth;
@@ -260,18 +260,24 @@ export default function LandingPage() {
     }
   }, []);
 
-  // Fungsi infinite loop manual yang stabil saat digeser atau ditekan tombol panah
+  // Fungsi deteksi otomatis: jika pengguna menggeser mendekati ujung kiri atau kanan, posisinya diputar mulus kembali ke tengah
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+
+    // Jika mendekati ujung kanan (sisa 300px), lompat mulus kembali ke tengah
+    if (scrollLeft >= scrollWidth - clientWidth - 300) {
+      scrollRef.current.scrollLeft = scrollWidth / 2;
+    } 
+    // Jika mendekati ujung kiri (sisa 300px), lompat mulus kembali ke tengah
+    else if (scrollLeft <= 300) {
+      scrollRef.current.scrollLeft = scrollWidth / 2;
+    }
+  };
+
   const scrollCard = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
       const scrollAmount = 380;
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      
-      if (direction === 'right' && scrollLeft >= scrollWidth - clientWidth - 150) {
-        scrollRef.current.scrollTo({ left: scrollWidth / 2, behavior: 'auto' });
-      } else if (direction === 'left' && scrollLeft <= 150) {
-        scrollRef.current.scrollTo({ left: scrollWidth / 2, behavior: 'auto' });
-      }
-
       scrollRef.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
@@ -411,7 +417,7 @@ export default function LandingPage() {
               <p className="text-neutral-500 text-sm mt-1">Geser tanpa batas ke samping untuk melihat pilihan kategori lainnya ➔</p>
             </div>
 
-            {/* Infinite Loop Horizontal Scrolling Card Grid with Navigation Arrows */}
+            {/* Seamless Infinite Loop Horizontal Scrolling Card Grid */}
             <div className="relative max-w-5xl mx-auto">
               <button 
                 onClick={() => scrollCard('left')}
@@ -429,6 +435,7 @@ export default function LandingPage() {
 
               <div 
                 ref={scrollRef}
+                onScroll={handleScroll}
                 className="flex overflow-x-auto no-scrollbar gap-6 py-6 px-4 snap-x snap-mandatory scroll-smooth"
               >
                 {infiniteCategories.map((cat, idx) => (
