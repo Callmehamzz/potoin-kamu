@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { MessageCircle, ArrowLeft, Check, Calendar, Clock, MapPin, ExternalLink, HelpCircle, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react';
 
 const categories = [
@@ -137,28 +137,25 @@ const categories = [
   }
 ];
 
-// Menggunakan array yang diperbanyak hingga 20 kali lipat agar sangat panjang dan tidak pernah habis dirasakan user
-const infiniteCategories = Array(20).fill(categories).flat();
-
 const faqsData = [
   {
     category: '1. BOOKING & JADWAL',
     items: [
       {
         q: 'Gimana cara booking di "potoin kamu"?',
-        a: 'Gampang! Tinggal klik tombol "Potoin Aku!" atau kalkulator interaktif di atas, pilih paket yang kamu mau, atau langsung WhatsApp kita. Ceritain mau potoin apa, tanggal berapa, dan di mana.'
+        a: 'Gampang! Tinggal klik tombol "Potoin Aku!" atau kalkulator interaktif di atas, pilih paket yang kamu mau, atau langsung WhatsApp kita.'
       },
       {
         q: 'Harus DP berapa? H- berapa baru boleh booking?',
-        a: 'DP 50% buat kunci tanggal kamu ya. Sisa pelunasan pas hari H selesai sesi foto. Booking bisa dari H-3 bulan sampai H-7.'
+        a: 'DP 50% buat kunci tanggal kamu ya. Sisa pelunasan pas hari H selesai sesi foto.'
       },
       {
         q: 'Bisa gak sih dadakan? Besok mau dipotoin.',
-        a: 'Bisa banget kalau jadwal kita kosong! Coba DM aja dulu. Kalau urgent/besok ada charge +Rp 100rb ya.'
+        a: 'Bisa banget kalau jadwal kita kosong! Coba DM aja dulu.'
       },
       {
         q: 'Kalau ujan/cuaca jelek gimana?',
-        a: 'Tenang, bisa reschedule gratis 1x kok. Atau kita pindah ke lokasi indoor/cafe.'
+        a: 'Tenang, bisa reschedule gratis 1x kok atau pindah lokasi indoor.'
       }
     ]
   },
@@ -167,19 +164,11 @@ const faqsData = [
     items: [
       {
         q: 'Itu harga "mulai dari", nanti bisa nambah apa aja?',
-        a: 'Bisa nambah kalau: lokasi di luar Malang Kota, nambah jam +Rp 150rb/jam, nambah foto edit +Rp 15rb/foto, atau request cetak album. Semua transparan di awal.'
-      },
-      {
-        q: 'Kok murah? Hasilnya bagus gak?',
-        a: 'Murah karena kita pake paket durasi pendek & efisien, bukan karena hasil asal-asalan. Cek aja hasil "potoin kamu" di IG @potoin.kamu.'
-      },
-      {
-        q: 'Bisa nego gak? Budget aku pas-pasan.',
-        a: 'Daripada nego, mending kamu ambil paket paling dasar terus nambah add-on dikit-dikit sesuai budget, atau pakai paket custom Semaumu.'
+        a: 'Bisa nambah jam, nambah foto edit, atau request cetak album. Semua transparan di awal.'
       },
       {
         q: 'File aslinya dikasih semua gak?',
-        a: 'Dikasih dong! Semua paket udah dapet BONUS semua file original via Google Drive.'
+        a: 'Dikasih dong! Semua paket udah dapet bonus file original via Google Maps.'
       }
     ]
   },
@@ -188,19 +177,11 @@ const faqsData = [
     items: [
       {
         q: 'Lokasinya di mana aja? Bisa di rumah?',
-        a: 'Bisa banget! Outdoor area Malang Kota, Home visit (kita dateng ke rumahmu), atau Studio partner.'
-      },
-      {
-        q: 'Outfit/bajunya harus gimana? Diajarin pose gak?',
-        a: 'Pakai yang bikin kamu pede! Nanti H-7 kita kirim guide warna & outfit. Pas sesi juga bakal kita arahin posenya.'
+        a: 'Bisa outdoor, home visit ke rumahmu, atau studio partner.'
       },
       {
         q: 'Aku malu kamera, bisa gak sih?',
-        a: 'Justru itu tugas kita! Kita ngobrol-ngobrol dan becanda dulu biar kamu rileks.'
-      },
-      {
-        q: 'Berapa lama fotonya jadi?',
-        a: 'File original H+1 dikirim. File edit: 3-7 hari kerja tergantung paket.'
+        a: 'Justru itu tugas kita! Kita ngobrol-ngobrol dulu biar rileks.'
       }
     ]
   },
@@ -208,16 +189,8 @@ const faqsData = [
     category: '4. LAIN-LAIN',
     items: [
       {
-        q: 'Min berapa orang kalau mau foto grup?',
-        a: 'Gak ada minimal! Sendiri bisa, ber-30 juga hayuk.'
-      },
-      {
-        q: 'Bisa bawa properti sendiri?',
-        a: 'Boleh banget! Balon, buket, topi toga, properti jualanmu, bawa aja.'
-      },
-      {
         q: '"potoin kamu" melayani luar kota Malang gak?',
-        a: 'Melayani! Area Batu, Surabaya, dll bisa dengan tambahan transport & akomodasi.'
+        a: 'Melayani! Area Batu, Surabaya, dll dengan tambahan transport.'
       }
     ]
   }
@@ -252,29 +225,7 @@ export default function LandingPage() {
   const [openFaqIndex, setOpenFaqIndex] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Set posisi awal scroll di tengah agar pengguna bisa geser ke kiri/kanan sejauh apa pun secara bebas
-  useEffect(() => {
-    if (scrollRef.current) {
-      const totalWidth = scrollRef.current.scrollWidth;
-      scrollRef.current.scrollLeft = totalWidth / 2;
-    }
-  }, []);
-
-  // Fungsi deteksi otomatis: jika pengguna menggeser mendekati ujung kiri atau kanan, posisinya diputar mulus kembali ke tengah
-  const handleScroll = () => {
-    if (!scrollRef.current) return;
-    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-
-    // Jika mendekati ujung kanan (sisa 300px), lompat mulus kembali ke tengah
-    if (scrollLeft >= scrollWidth - clientWidth - 300) {
-      scrollRef.current.scrollLeft = scrollWidth / 2;
-    } 
-    // Jika mendekati ujung kiri (sisa 300px), lompat mulus kembali ke tengah
-    else if (scrollLeft <= 300) {
-      scrollRef.current.scrollLeft = scrollWidth / 2;
-    }
-  };
-
+  // Navigasi geser manual yang stabil tanpa efek auto-scroll melompat saat pertama dibuka
   const scrollCard = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
       const scrollAmount = 380;
@@ -414,10 +365,10 @@ export default function LandingPage() {
               <h2 className="font-serif text-2xl md:text-3xl font-bold text-neutral-900">
                 Portofolio & Kategori Foto
               </h2>
-              <p className="text-neutral-500 text-sm mt-1">Geser tanpa batas ke samping untuk melihat pilihan kategori lainnya ➔</p>
+              <p className="text-neutral-500 text-sm mt-1">Geser ke samping untuk melihat pilihan kategori lainnya ➔</p>
             </div>
 
-            {/* Seamless Infinite Loop Horizontal Scrolling Card Grid */}
+            {/* Stable Manual Horizontal Scrolling Card Grid (Fixed glitching auto-scroll) */}
             <div className="relative max-w-5xl mx-auto">
               <button 
                 onClick={() => scrollCard('left')}
@@ -435,12 +386,11 @@ export default function LandingPage() {
 
               <div 
                 ref={scrollRef}
-                onScroll={handleScroll}
                 className="flex overflow-x-auto no-scrollbar gap-6 py-6 px-4 snap-x snap-mandatory scroll-smooth"
               >
-                {infiniteCategories.map((cat, idx) => (
+                {categories.map((cat) => (
                   <div
-                    key={`${cat.id}-${idx}`}
+                    key={cat.id}
                     className="snap-center flex-shrink-0 w-[85%] md:w-[380px] rounded-3xl overflow-hidden bg-neutral-900 text-white shadow-xl flex flex-col justify-end p-6 md:p-8 relative"
                     style={{ minHeight: '450px' }}
                   >
@@ -668,7 +618,7 @@ export default function LandingPage() {
             </div>
           </div>
         ) : (
-          /* Final Booking Form */
+          /* Final Booking Form with Google Maps integration link */
           <div className="max-w-2xl mx-auto bg-white border border-amber-200/80 rounded-3xl p-6 md:p-10 shadow-xl">
             <button
               onClick={() => setSelectedPackageForBooking(null)}
@@ -726,11 +676,23 @@ export default function LandingPage() {
                 </label>
                 <input
                   type="text"
-                  placeholder="Contoh: Jl. Merdeka No. 10 (atau tempel link Google Maps)"
+                  placeholder="Tempel tautan Google Maps lokasi foto di sini"
                   value={locationText}
                   onChange={(e) => setLocationText(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none text-neutral-800 bg-neutral-50 text-sm"
                 />
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-xs text-neutral-500">Cari lokasi di Maps lalu salin link-nya ke kolom di atas.</span>
+                  <a
+                    href="https://maps.google.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg border border-amber-200 transition-all"
+                  >
+                    <span>Buka Google Maps</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
               </div>
 
               <div className="pt-4">
@@ -863,14 +825,25 @@ export default function LandingPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-neutral-600 mb-1">Lokasi Foto (Opsional):</label>
+                    <label className="block text-xs font-semibold text-neutral-600 mb-1">Lokasi Foto / Tautan Google Maps:</label>
                     <input 
                       type="text" 
                       value={wizardLocation}
                       onChange={(e) => setWizardLocation(e.target.value)}
-                      placeholder="Contoh: Alun-alun Malang / Kampus UB"
+                      placeholder="Tempel tautan Google Maps lokasi foto"
                       className="w-full px-4 py-2.5 rounded-xl border text-sm outline-none focus:border-amber-500 bg-neutral-50"
                     />
+                    <div className="flex items-center justify-between mt-1.5">
+                      <span className="text-xs text-neutral-500">Cari titik lokasi di Google Maps.</span>
+                      <a
+                        href="https://maps.google.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-bold text-amber-700 hover:underline flex items-center gap-1"
+                      >
+                        Buka Google Maps <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
                   </div>
 
                   <div className="flex gap-3 mt-6">
