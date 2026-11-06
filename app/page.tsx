@@ -1,6 +1,6 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, ArrowLeft, Check, Calendar, Clock, MapPin, HelpCircle, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, Sparkles, Navigation } from 'lucide-react';
+import { MessageCircle, ArrowLeft, Check, Calendar, Clock, MapPin, HelpCircle, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, Sparkles, Navigation, Search, Crosshair } from 'lucide-react';
 
 const categories = [
   {
@@ -137,16 +137,18 @@ const categories = [
   }
 ];
 
-// Perbanyak array kategori agar infinite scroll berjalan mulus tanpa batas
-const infiniteCategories = Array(15).fill(categories).flat();
+// Perbanyak array kategori agar infinite scroll bisa digeser terus tanpa batas
+const infiniteCategories = Array(20).fill(categories).flat();
 
-const popularMalangSpots = [
+const malangLocationsList = [
   { name: 'Alun-Alun Kota Malang', address: 'Jl. Merdeka Selatan, Kiduldalem, Kec. Klojen, Kota Malang' },
   { name: 'Kayutangan Heritage', address: 'Jl. Jenderal Basuki Rahmat, Kauman, Kec. Klojen, Kota Malang' },
   { name: 'Ijen Boulevard / Taman Slamet', address: 'Jl. Besar Ijen, Oro-oro Dowo, Kec. Klojen, Kota Malang' },
   { name: 'Universitas Brawijaya (UB)', address: 'Jl. Veteran, Ketawanggede, Kec. Lowokwaru, Kota Malang' },
   { name: 'Stadion Gajayana Malang', address: 'Jl. Tenis Indah, Kauman, Kec. Klojen, Kota Malang' },
-  { name: 'Taman Kunang-Kunang', address: 'Jl. Jakarta, Penanggungan, Kec. Klojen, Kota Malang' }
+  { name: 'Taman Kunang-Kunang', address: 'Jl. Jakarta, Penanggungan, Kec. Klojen, Kota Malang' },
+  { name: 'Kampus UM (Universitas Negeri Malang)', address: 'Jl. Semarang No.5, Sumbersari, Kec. Lowokwaru, Kota Malang' },
+  { name: 'Malang Town Square (MATOS)', address: 'Jl. Veteran No.2, Penanggungan, Kec. Klojen, Kota Malang' }
 ];
 
 const faqsData = [
@@ -234,33 +236,21 @@ export default function LandingPage() {
   const [locationText, setLocationText] = useState('');
   const [selectedPackageForBooking, setSelectedPackageForBooking] = useState<{ name: string; price: string; spec: string } | null>(null);
 
-  // State untuk Modal Peta Interaktif ala Ojek Online
+  // State untuk Modal Peta Pinpoint ala Gojek
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
-  const [customAddressInput, setCustomAddressInput] = useState('');
+  const [mapSearchQuery, setMapSearchQuery] = useState('');
+  const [isDetectingGPS, setIsDetectingGPS] = useState(false);
 
   const [openFaqIndex, setOpenFaqIndex] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Set posisi awal di tengah persis tanpa animasi/auto-scroll bergeser sendiri saat pertama kali dibuka
+  // Set posisi awal scroll di tengah tanpa animasi/auto-scroll agar tidak bergerak sendiri saat pertama kali dibuka atau direfresh
   useEffect(() => {
     if (scrollRef.current) {
       const totalWidth = scrollRef.current.scrollWidth;
       scrollRef.current.scrollLeft = totalWidth / 2;
     }
   }, []);
-
-  // Infinite scroll loop halus tanpa loncat
-  const handleScroll = () => {
-    if (!scrollRef.current) return;
-    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-    const third = scrollWidth / 3;
-
-    if (scrollLeft >= scrollWidth - clientWidth - 200) {
-      scrollRef.current.scrollLeft -= third;
-    } else if (scrollLeft <= 200) {
-      scrollRef.current.scrollLeft += third;
-    }
-  };
 
   const scrollCard = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
@@ -280,6 +270,37 @@ export default function LandingPage() {
     setIsWizardOpen(true);
     setWizardStep(1);
   };
+
+  const handleDetectCurrentLocation = () => {
+    setIsDetectingGPS(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude.toFixed(4);
+          const lng = position.coords.longitude.toFixed(4);
+          const locString = `Lokasi Terkini Saya (Koordinat: ${lat}, ${lng})`;
+          setLocationText(locString);
+          setWizardLocation(locString);
+          setIsDetectingGPS(false);
+          setIsMapModalOpen(false);
+          alert('Berhasil mendeteksi lokasi terkini Anda!');
+        },
+        (error) => {
+          setIsDetectingGPS(false);
+          alert('Gagal mendeteksi lokasi GPS. Pastikan izin lokasi aktif atau pilih dari daftar spot populer.');
+        },
+        { timeout: 10000 }
+      );
+    } else {
+      setIsDetectingGPS(false);
+      alert('Browser Anda tidak Mendukung deteksi GPS.');
+    }
+  };
+
+  const filteredMapLocations = malangLocationsList.filter(item => 
+    item.name.toLowerCase().includes(mapSearchQuery.toLowerCase()) || 
+    item.address.toLowerCase().includes(mapSearchQuery.toLowerCase())
+  );
 
   const handleWizardSubmitWhatsApp = (e: React.FormEvent) => {
     e.preventDefault();
@@ -404,7 +425,7 @@ export default function LandingPage() {
               <p className="text-neutral-500 text-sm mt-1">Geser tanpa batas ke samping untuk melihat pilihan kategori lainnya ➔</p>
             </div>
 
-            {/* Seamless Infinite Loop Horizontal Scrolling Card Grid */}
+            {/* Stable Manual Horizontal Scrolling Card Grid without auto-scroll glitch */}
             <div className="relative max-w-5xl mx-auto">
               <button 
                 onClick={() => scrollCard('left')}
@@ -422,7 +443,6 @@ export default function LandingPage() {
 
               <div 
                 ref={scrollRef}
-                onScroll={handleScroll}
                 className="flex overflow-x-auto no-scrollbar gap-6 py-6 px-4 snap-x snap-mandatory scroll-smooth"
               >
                 {infiniteCategories.map((cat, idx) => (
@@ -655,7 +675,7 @@ export default function LandingPage() {
             </div>
           </div>
         ) : (
-          /* Final Booking Form with Interactive Pinpoint Maps */
+          /* Final Booking Form with Gojek-like Pinpoint Selector */
           <div className="max-w-2xl mx-auto bg-white border border-amber-200/80 rounded-3xl p-6 md:p-10 shadow-xl">
             <button
               onClick={() => setSelectedPackageForBooking(null)}
@@ -716,7 +736,7 @@ export default function LandingPage() {
                     type="text"
                     required
                     readOnly
-                    placeholder="Pilih titik lokasi via peta..."
+                    placeholder="Tentukan titik lokasi via peta..."
                     value={locationText}
                     className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none text-neutral-800 bg-neutral-50 text-sm cursor-pointer"
                     onClick={() => setIsMapModalOpen(true)}
@@ -730,7 +750,7 @@ export default function LandingPage() {
                     <span>Pin Lokasi</span>
                   </button>
                 </div>
-                <p className="text-xs text-neutral-500 mt-1.5">Klik tombol "Pin Lokasi" untuk memilih titik tempat seperti ojek online.</p>
+                <p className="text-xs text-neutral-500 mt-1.5">Klik tombol "Pin Lokasi" untuk membuka peta pilihan titik seperti aplikasi ojek online.</p>
               </div>
 
               <div className="pt-4">
@@ -747,14 +767,14 @@ export default function LandingPage() {
         )}
       </section>
 
-      {/* MODAL PETA INTERAKTIF / PINPOINT ALA OJEK ONLINE */}
+      {/* MODAL PETA INTERAKTIF PINPOINT ALA GOJEK */}
       {isMapModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 md:p-8 shadow-2xl relative">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 md:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4 border-b pb-3">
               <div className="flex items-center gap-2">
-                <Navigation className="w-5 h-5 text-amber-600" />
-                <h3 className="font-serif text-lg font-bold text-neutral-900">Tentukan Titik Lokasi Foto</h3>
+                <Navigation className="w-5 h-5 text-emerald-600" />
+                <h3 className="font-serif text-lg font-bold text-neutral-900">Tentukan Titik Jemput / Lokasi Foto</h3>
               </div>
               <button 
                 onClick={() => setIsMapModalOpen(false)}
@@ -764,57 +784,58 @@ export default function LandingPage() {
               </button>
             </div>
 
-            <p className="text-xs text-neutral-600 mb-4">
-              Pilih salah satu spot populer di bawah ini atau ketik alamat spesifik tujuan pemotretan Anda (seperti menentukan titik jemput/tujuan ojek online):
-            </p>
+            {/* Tombol Deteksi Lokasi Terkini GPS ala Ojol */}
+            <button
+              type="button"
+              onClick={handleDetectCurrentLocation}
+              disabled={isDetectingGPS}
+              className="w-full mb-4 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold py-3 px-4 rounded-2xl flex items-center justify-center gap-2 transition-all text-sm shadow-sm"
+            >
+              <Crosshair className={`w-4 h-4 text-emerald-600 ${isDetectingGPS ? 'animate-spin' : ''}`} />
+              <span>{isDetectingGPS ? 'Mendeteksi Lokasi GPS Anda...' : 'Gunakan Lokasi Terkini Saya (GPS)'}</span>
+            </button>
 
-            <div className="space-y-2 mb-4 max-h-56 overflow-y-auto pr-1">
-              {popularMalangSpots.map((spot, idx) => (
-                <div 
-                  key={idx}
-                  onClick={() => {
-                    setLocationText(`${spot.name} (${spot.address})`);
-                    setWizardLocation(`${spot.name} (${spot.address})`);
-                    setIsMapModalOpen(false);
-                  }}
-                  className="p-3 rounded-xl border border-neutral-200 hover:border-amber-500 hover:bg-amber-50 cursor-pointer transition-all flex items-start gap-3"
-                >
-                  <MapPin className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <h4 className="font-bold text-neutral-900 text-sm">{spot.name}</h4>
-                    <p className="text-xs text-neutral-500">{spot.address}</p>
-                  </div>
-                </div>
-              ))}
+            {/* Kolom Pencarian Tempat ala Gojek */}
+            <div className="relative mb-4">
+              <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3.5" />
+              <input
+                type="text"
+                placeholder="Cari nama tempat, kampus, cafe, atau jalan..."
+                value={mapSearchQuery}
+                onChange={(e) => setMapSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-200 text-sm outline-none focus:border-emerald-500 bg-neutral-50"
+              />
             </div>
 
-            <div className="border-t pt-4">
-              <label className="block text-xs font-semibold text-neutral-700 mb-1">Atau Ketik Alamat / Nama Lokasi Spesifik:</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Contoh: Jl. Ijen No. 45, Malang"
-                  value={customAddressInput}
-                  onChange={(e) => setCustomAddressInput(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border text-sm outline-none focus:border-amber-500 bg-neutral-50"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (customAddressInput.trim()) {
-                      setLocationText(customAddressInput.trim());
-                      setWizardLocation(customAddressInput.trim());
+            <p className="text-xs font-bold text-neutral-700 mb-2">Pilih dari Titik / Spot Peta Tersimpan:</p>
+
+            <div className="space-y-2 mb-4 max-h-60 overflow-y-auto pr-1">
+              {filteredMapLocations.length > 0 ? (
+                filteredMapLocations.map((item, idx) => (
+                  <div 
+                    key={idx}
+                    onClick={() => {
+                      const finalStr = `${item.name} (${item.address})`;
+                      setLocationText(finalStr);
+                      setWizardLocation(finalStr);
                       setIsMapModalOpen(false);
-                      setCustomAddressInput('');
-                    } else {
-                      alert('Mohon ketik alamat lokasi terlebih dahulu.');
-                    }
-                  }}
-                  className="bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white font-medium px-4 py-2.5 rounded-xl text-sm transition-all flex-shrink-0"
-                >
-                  Gunakan
-                </button>
-              </div>
+                    }}
+                    className="p-3 rounded-xl border border-neutral-200 hover:border-emerald-500 hover:bg-emerald-50/50 cursor-pointer transition-all flex items-start gap-3"
+                  >
+                    <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <MapPin className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-neutral-900 text-sm">{item.name}</h4>
+                      <p className="text-xs text-neutral-500">{item.address}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-6 text-neutral-400 text-xs">
+                  Lokasi tidak ditemukan. Coba kata kunci lain atau gunakan GPS Anda.
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -943,7 +964,7 @@ export default function LandingPage() {
                         required
                         readOnly
                         value={wizardLocation}
-                        placeholder="Klik 'Pin Lokasi' untuk memilih titik..."
+                        placeholder="Klik 'Pin Lokasi' untuk menentukan titik..."
                         className="w-full px-4 py-2.5 rounded-xl border text-sm outline-none focus:border-amber-500 bg-neutral-50 cursor-pointer"
                         onClick={() => setIsMapModalOpen(true)}
                       />
