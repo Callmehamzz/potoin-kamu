@@ -1,6 +1,6 @@
 'use client';
-import { useState, useRef } from 'react';
-import { MessageCircle, ArrowLeft, Check, Calendar, Clock, MapPin, ExternalLink, HelpCircle, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { MessageCircle, ArrowLeft, Check, Calendar, Clock, MapPin, HelpCircle, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react';
 
 const categories = [
   {
@@ -137,6 +137,18 @@ const categories = [
   }
 ];
 
+// Perbanyak array kategori agar infinite scroll berjalan mulus tanpa batas
+const infiniteCategories = Array(15).fill(categories).flat();
+
+const popularMalangSpots = [
+  'Alun-Alun Kota Malang',
+  'Kayutangan Heritage',
+  'Ijen Boulevard / Taman Slamet',
+  'Universitas Brawijaya (UB)',
+  'Stadion Gajayana Malang',
+  'Taman Kunang-Kunang'
+];
+
 const faqsData = [
   {
     category: '1. BOOKING & JADWAL',
@@ -168,7 +180,7 @@ const faqsData = [
       },
       {
         q: 'File aslinya dikasih semua gak?',
-        a: 'Dikasih dong! Semua paket udah dapet bonus file original via Google Maps.'
+        a: 'Dikasih dong! Semua paket udah dapet bonus file original via Google Drive.'
       }
     ]
   },
@@ -225,7 +237,27 @@ export default function LandingPage() {
   const [openFaqIndex, setOpenFaqIndex] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Navigasi geser manual yang stabil tanpa efek auto-scroll melompat saat pertama dibuka
+  // Set posisi awal di tengah persis tanpa animasi/auto-scroll bergeser sendiri saat pertama kali dibuka
+  useEffect(() => {
+    if (scrollRef.current) {
+      const totalWidth = scrollRef.current.scrollWidth;
+      scrollRef.current.scrollLeft = totalWidth / 2;
+    }
+  }, []);
+
+  // Infinite scroll loop halus tanpa loncat
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+    const third = scrollWidth / 3;
+
+    if (scrollLeft >= scrollWidth - clientWidth - 200) {
+      scrollRef.current.scrollLeft -= third;
+    } else if (scrollLeft <= 200) {
+      scrollRef.current.scrollLeft += third;
+    }
+  };
+
   const scrollCard = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
       const scrollAmount = 380;
@@ -262,7 +294,7 @@ export default function LandingPage() {
       `⏱️ *Durasi*: ${wizardDuration}\n` +
       `📅 *Tanggal*: ${wizardDate}\n` +
       `⏰ *Jam / Slot*: ${wizardTime}\n` +
-      `📍 *Lokasi*: ${wizardLocation || 'Akan dikirim via chat'}\n\n` +
+      `📍 *Lokasi Sesi Foto*: ${wizardLocation || 'Belum ditentukan'}\n\n` +
       `Mohon info ketersediaan jadwalnya ya kak. Terima kasih!`
     );
 
@@ -288,7 +320,7 @@ export default function LandingPage() {
       `📋 *Detail*: ${selectedPackageForBooking?.spec}\n` +
       `📅 *Tanggal*: ${bookingDate}\n` +
       `⏰ *Jam / Slot*: ${bookingTime}\n` +
-      `📍 *Lokasi*: ${locationText || 'Akan dikirim via chat'}\n\n` +
+      `📍 *Lokasi Sesi Foto*: ${locationText || 'Belum ditentukan'}\n\n` +
       `Mohon konfirmasinya ya kak!`
     );
 
@@ -365,10 +397,10 @@ export default function LandingPage() {
               <h2 className="font-serif text-2xl md:text-3xl font-bold text-neutral-900">
                 Portofolio & Kategori Foto
               </h2>
-              <p className="text-neutral-500 text-sm mt-1">Geser ke samping untuk melihat pilihan kategori lainnya ➔</p>
+              <p className="text-neutral-500 text-sm mt-1">Geser tanpa batas ke samping untuk melihat pilihan kategori lainnya ➔</p>
             </div>
 
-            {/* Stable Manual Horizontal Scrolling Card Grid (Fixed glitching auto-scroll) */}
+            {/* Seamless Infinite Loop Horizontal Scrolling Card Grid */}
             <div className="relative max-w-5xl mx-auto">
               <button 
                 onClick={() => scrollCard('left')}
@@ -386,11 +418,12 @@ export default function LandingPage() {
 
               <div 
                 ref={scrollRef}
+                onScroll={handleScroll}
                 className="flex overflow-x-auto no-scrollbar gap-6 py-6 px-4 snap-x snap-mandatory scroll-smooth"
               >
-                {categories.map((cat) => (
+                {infiniteCategories.map((cat, idx) => (
                   <div
-                    key={cat.id}
+                    key={`${cat.id}-${idx}`}
                     className="snap-center flex-shrink-0 w-[85%] md:w-[380px] rounded-3xl overflow-hidden bg-neutral-900 text-white shadow-xl flex flex-col justify-end p-6 md:p-8 relative"
                     style={{ minHeight: '450px' }}
                   >
@@ -618,7 +651,7 @@ export default function LandingPage() {
             </div>
           </div>
         ) : (
-          /* Final Booking Form with Google Maps integration link */
+          /* Final Booking Form with Quick Location Picker */
           <div className="max-w-2xl mx-auto bg-white border border-amber-200/80 rounded-3xl p-6 md:p-10 shadow-xl">
             <button
               onClick={() => setSelectedPackageForBooking(null)}
@@ -672,26 +705,31 @@ export default function LandingPage() {
               <div>
                 <label className="block text-sm font-semibold text-neutral-800 mb-2 flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-amber-600" />
-                  Lokasi / Tautan Google Maps
+                  Pilih atau Ketik Lokasi Sesi Foto
                 </label>
                 <input
                   type="text"
-                  placeholder="Tempel tautan Google Maps lokasi foto di sini"
+                  required
+                  placeholder="Ketik alamat atau pilih dari spot populer di bawah"
                   value={locationText}
                   onChange={(e) => setLocationText(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none text-neutral-800 bg-neutral-50 text-sm"
+                  className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none text-neutral-800 bg-neutral-50 text-sm mb-3"
                 />
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-xs text-neutral-500">Cari lokasi di Maps lalu salin link-nya ke kolom di atas.</span>
-                  <a
-                    href="https://maps.google.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg border border-amber-200 transition-all"
-                  >
-                    <span>Buka Google Maps</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
+                
+                <div className="space-y-1.5">
+                  <p className="text-xs font-semibold text-neutral-500">Atau pilih spot populer di Malang:</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {popularMalangSpots.map((spot, idx) => (
+                      <button
+                        type="button"
+                        key={idx}
+                        onClick={() => setLocationText(spot)}
+                        className="text-xs bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 px-3 py-1 rounded-lg transition-all font-medium"
+                      >
+                        📍 {spot}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -825,24 +863,29 @@ export default function LandingPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-neutral-600 mb-1">Lokasi Foto / Tautan Google Maps:</label>
+                    <label className="block text-xs font-semibold text-neutral-600 mb-1">Lokasi Sesi Foto:</label>
                     <input 
                       type="text" 
+                      required
                       value={wizardLocation}
                       onChange={(e) => setWizardLocation(e.target.value)}
-                      placeholder="Tempel tautan Google Maps lokasi foto"
-                      className="w-full px-4 py-2.5 rounded-xl border text-sm outline-none focus:border-amber-500 bg-neutral-50"
+                      placeholder="Ketik alamat atau pilih dari spot populer di bawah"
+                      className="w-full px-4 py-2.5 rounded-xl border text-sm outline-none focus:border-amber-500 bg-neutral-50 mb-2"
                     />
-                    <div className="flex items-center justify-between mt-1.5">
-                      <span className="text-xs text-neutral-500">Cari titik lokasi di Google Maps.</span>
-                      <a
-                        href="https://maps.google.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs font-bold text-amber-700 hover:underline flex items-center gap-1"
-                      >
-                        Buka Google Maps <ExternalLink className="w-3 h-3" />
-                      </a>
+                    <div className="space-y-1">
+                      <p className="text-[11px] font-semibold text-neutral-500">Spot populer:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {popularMalangSpots.map((spot, idx) => (
+                          <button
+                            type="button"
+                            key={idx}
+                            onClick={() => setWizardLocation(spot)}
+                            className="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 px-2.5 py-0.5 rounded-md font-medium"
+                          >
+                            📍 {spot}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
