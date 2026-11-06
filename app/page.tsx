@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { MessageCircle, ArrowLeft, Check, Calendar, Clock, MapPin, HelpCircle, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, Sparkles, Navigation, Search, Crosshair } from 'lucide-react';
 
 const categories = [
@@ -137,8 +137,6 @@ const categories = [
   }
 ];
 
-const infiniteCategories = Array(20).fill(categories).flat();
-
 const faqsData = [
   {
     category: '1. BOOKING & JADWAL',
@@ -224,9 +222,9 @@ export default function LandingPage() {
   const [locationText, setLocationText] = useState('');
   const [selectedPackageForBooking, setSelectedPackageForBooking] = useState<{ name: string; price: string; spec: string } | null>(null);
 
-  // State Peta Interaktif ala Gojek (Leaflet Maps)
+  // State Peta Interaktif Pinpoint
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
-  const [mapCoords, setMapCoords] = useState({ lat: -7.9666, lng: 112.6326 }); // Default Malang
+  const [mapCoords, setMapCoords] = useState({ lat: -7.9666, lng: 112.6326 });
   const [addressTitle, setAddressTitle] = useState('Alun-Alun Kota Malang (Titik Pusat)');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -235,14 +233,6 @@ export default function LandingPage() {
 
   const [openFaqIndex, setOpenFaqIndex] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Pastikan halaman di awal/refresh stabil di tengah tanpa auto-scroll liar
-  useEffect(() => {
-    if (scrollRef.current) {
-      const totalWidth = scrollRef.current.scrollWidth;
-      scrollRef.current.scrollLeft = totalWidth / 2;
-    }
-  }, []);
 
   const scrollCard = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
@@ -263,7 +253,6 @@ export default function LandingPage() {
     setWizardStep(1);
   };
 
-  // Fungsi Pencarian Lokasi (Geocoding API gratis via Nominatim OpenStreetMap)
   const handleSearchLocation = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
@@ -279,7 +268,6 @@ export default function LandingPage() {
     }
   };
 
-  // Deteksi GPS Terkini ala Ojek Online
   const handleDetectGPS = () => {
     setIsDetectingGPS(true);
     if (navigator.geolocation) {
@@ -293,7 +281,7 @@ export default function LandingPage() {
         },
         (err) => {
           setIsDetectingGPS(false);
-          alert('Gagal mendeteksi lokasi GPS. Pastikan izin lokasi aktif.');
+          alert('Gagal mendeteksi lokasi GPS.');
         },
         { timeout: 10000 }
       );
@@ -361,13 +349,6 @@ export default function LandingPage() {
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
       />
-      {/* Memuat Pustaka Leaflet CSS untuk Peta Interaktif ala Gojek */}
-      <link 
-        rel="stylesheet" 
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
-        crossOrigin="" 
-      />
       <style>{`
         .font-serif {
           font-family: 'Playfair Display', serif;
@@ -430,10 +411,10 @@ export default function LandingPage() {
               <h2 className="font-serif text-2xl md:text-3xl font-bold text-neutral-900">
                 Portofolio & Kategori Foto
               </h2>
-              <p className="text-neutral-500 text-sm mt-1">Geser tanpa batas ke samping untuk melihat pilihan kategori lainnya ➔</p>
+              <p className="text-neutral-500 text-sm mt-1">Geser ke samping untuk melihat pilihan kategori lainnya ➔</p>
             </div>
 
-            {/* Stable Manual Horizontal Scrolling Card Grid without auto-scroll jump */}
+            {/* Stable Manual Horizontal Scrolling Card Grid (Fixed auto-scroll bug) */}
             <div className="relative max-w-5xl mx-auto">
               <button 
                 onClick={() => scrollCard('left')}
@@ -453,9 +434,9 @@ export default function LandingPage() {
                 ref={scrollRef}
                 className="flex overflow-x-auto no-scrollbar gap-6 py-6 px-4 snap-x snap-mandatory scroll-smooth"
               >
-                {infiniteCategories.map((cat, idx) => (
+                {categories.map((cat) => (
                   <div
-                    key={`${cat.id}-${idx}`}
+                    key={cat.id}
                     className="snap-center flex-shrink-0 w-[85%] md:w-[380px] rounded-3xl overflow-hidden bg-neutral-900 text-white shadow-xl flex flex-col justify-end p-6 md:p-8 relative"
                     style={{ minHeight: '450px' }}
                   >
@@ -683,7 +664,7 @@ export default function LandingPage() {
             </div>
           </div>
         ) : (
-          /* Final Booking Form with Gojek-like Pinpoint Selector */
+          /* Final Booking Form with Pinpoint Map Selector */
           <div className="max-w-2xl mx-auto bg-white border border-amber-200/80 rounded-3xl p-6 md:p-10 shadow-xl">
             <button
               onClick={() => setSelectedPackageForBooking(null)}
@@ -775,14 +756,14 @@ export default function LandingPage() {
         )}
       </section>
 
-      {/* MODAL PETA INTERAKTIF ALA GOJEK DENGAN LEAFLET MAPS */}
+      {/* MODAL PETA INTERAKTIF PINPOINT */}
       {isMapModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl relative max-h-[95vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4 border-b pb-3">
               <div className="flex items-center gap-2">
                 <Navigation className="w-5 h-5 text-emerald-600" />
-                <h3 className="font-serif text-lg font-bold text-neutral-900">Pin Lokasi Sesi Foto (Ala Gojek)</h3>
+                <h3 className="font-serif text-lg font-bold text-neutral-900">Pin Lokasi Sesi Foto</h3>
               </div>
               <button 
                 onClick={() => setIsMapModalOpen(false)}
@@ -843,7 +824,7 @@ export default function LandingPage() {
               <span>{isDetectingGPS ? 'Mendeteksi GPS...' : 'Gunakan Lokasi Terkini Saya (GPS)'}</span>
             </button>
 
-            {/* Area Peta Interaktif OpenStreetMap (Leaflet) */}
+            {/* Area Peta Interaktif */}
             <div className="relative w-full h-72 rounded-2xl overflow-hidden border border-neutral-200 shadow-inner mb-4 z-10">
               <iframe
                 title="Interactive Map"
@@ -853,7 +834,6 @@ export default function LandingPage() {
                 loading="lazy"
                 src={`https://www.openstreetmap.org/export/embed.html?bbox=${mapCoords.lng - 0.01}%2C${mapCoords.lat - 0.01}%2C${mapCoords.lng + 0.01}%2C${mapCoords.lat + 0.01}&layer=mapnik&marker=${mapCoords.lat}%2C${mapCoords.lng}`}
               />
-              {/* Pin Jarum Tengah ala Gojek */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-20 flex flex-col items-center">
                 <div className="bg-neutral-900 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-lg whitespace-nowrap mb-1">
                   📍 Titik Sesi Foto
@@ -893,7 +873,7 @@ export default function LandingPage() {
         </div>
       )}
 
-      {/* WIZARD MODAL / KALKULATOR "Potoin Aku Sekarang" */}
+      {/* WIZARD MODAL / KALKULATOR */}
       {isWizardOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-xl w-full p-6 md:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto">
