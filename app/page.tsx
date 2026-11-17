@@ -1,8 +1,120 @@
 'use client';
-import { useState, useRef } from 'react';
-import { MessageCircle, ArrowLeft, Check, Calendar, Clock, MapPin, HelpCircle, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, Sparkles, Navigation, Search, Crosshair } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import type { FormEvent, ReactNode } from 'react';
+import { MessageCircle, ArrowLeft, Check, Calendar, Clock, MapPin, HelpCircle, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, Sparkles, User } from 'lucide-react';
 
-const categories = [
+/* ============================================================
+   KONSTANTA & TIPE
+   ============================================================ */
+
+const WA_NUMBER = '628135353498';
+
+type PackageItem = { name: string; price: string; spec: string; bonus: string; ideal: string };
+type SubCategory = { id: string; name: string; desc: string; image: string; packages: PackageItem[] };
+type Category = { id: string; title: string; tagline: string; image: string; subcategories: SubCategory[] };
+
+type LocationData = {
+  type: string;     // id jenis lokasi
+  area: string;     // wilayah layanan
+  address: string;  // nama spot / alamat lengkap (teks manual)
+  landmark: string; // patokan atau catatan tambahan (opsional)
+};
+
+const popularSpots = [
+  'Alun-Alun Kota Malang',
+  'Kayutangan Heritage',
+  'Universitas Brawijaya'
+];
+
+const locationTypes = [
+  {
+    id: 'outdoor',
+    label: 'Outdoor / spot populer',
+    addressLabel: 'Nama spot atau alamat',
+    placeholder: 'Mis. Alun-Alun Kota Malang, atau Jl. Ijen, Malang',
+    required: true
+  },
+  {
+    id: 'home',
+    label: 'Home visit (rumahku)',
+    addressLabel: 'Alamat rumah lengkap',
+    placeholder: 'Jalan, nomor rumah, RT/RW, kelurahan',
+    required: true
+  },
+  {
+    id: 'venue',
+    label: 'Venue acara / kampus',
+    addressLabel: 'Nama venue dan alamatnya',
+    placeholder: 'Mis. nama gedung / kampus / kafe, jalan, kelurahan',
+    required: true
+  },
+  {
+    id: 'studio',
+    label: 'Studio partner',
+    addressLabel: 'Preferensi studio (opsional)',
+    placeholder: 'Kosongkan kalau mau kami yang rekomendasikan',
+    required: false
+  }
+];
+
+const areaOptions = ['Kota Malang', 'Kabupaten Malang', 'Kota Batu', 'Luar kota (Surabaya, dll)'];
+const transportAreas = ['Kota Batu', 'Luar kota (Surabaya, dll)'];
+
+const emptyLocation: LocationData = {
+  type: locationTypes[0].id,
+  area: areaOptions[0],
+  address: '',
+  landmark: ''
+};
+
+const availableTimeSlots = [
+  '09.00 - 11.00 WIB (Pagi)',
+  '13.00 - 15.00 WIB (Siang)',
+  '16.00 - 18.00 WIB (Sore / Golden Hour)'
+];
+
+const navLinks = [
+  { id: 'kategori', label: 'Kategori' },
+  { id: 'cara-booking', label: 'Cara booking' },
+  { id: 'area-layanan', label: 'Area layanan' },
+  { id: 'faq', label: 'FAQ' }
+];
+
+const bookingSteps = [
+  {
+    title: 'Pilih kategori dan paket',
+    desc: 'Lihat pilihan paket di tiap kategori, atau pakai kalkulator Potoin Aku untuk dipandu langkah demi langkah.'
+  },
+  {
+    title: 'Isi jadwal dan lokasi',
+    desc: 'Tentukan tanggal, sesi jam, dan lokasi pemotretan. Cukup tulis nama spot atau alamat lengkapnya.'
+  },
+  {
+    title: 'Kirim ke WhatsApp dan DP',
+    desc: 'Detail pesananmu otomatis dirangkum di chat. DP 50% untuk mengunci tanggal.'
+  },
+  {
+    title: 'Sesi foto dan pelunasan',
+    desc: 'Pelunasan dilakukan setelah sesi foto selesai. Semua hasil dikirim lewat Google Drive.'
+  }
+];
+
+const serviceAreas = [
+  {
+    name: 'Kota dan Kabupaten Malang',
+    desc: 'Wilayah layanan utama kami, tanpa biaya transport tambahan.'
+  },
+  {
+    name: 'Kota Batu',
+    desc: 'Tersedia dengan tambahan biaya transport. Nominalnya dikonfirmasi lewat WhatsApp.'
+  },
+  {
+    name: 'Surabaya dan kota lainnya',
+    desc: 'Tersedia dengan tambahan biaya transport. Nominalnya dikonfirmasi lewat WhatsApp.'
+  }
+];
+
+const categories: Category[] = [
   {
     id: 'momenmu',
     title: 'Potoin Momenmu',
@@ -143,7 +255,7 @@ const faqsData = [
     items: [
       {
         q: 'Gimana cara booking di "potoin kamu"?',
-        a: 'Gampang! Tinggal klik tombol "Potoin Aku!" atau kalkulator interaktif di atas, pilih paket yang kamu mau, atau langsung WhatsApp kita.'
+        a: 'Gampang! Tinggal klik tombol "Potoin aku sekarang" atau pilih langsung paket yang kamu mau di bagian kategori, atau langsung WhatsApp kita.'
       },
       {
         q: 'Harus DP berapa? H- berapa baru boleh booking?',
@@ -196,43 +308,301 @@ const faqsData = [
   }
 ];
 
-const availableTimeSlots = [
-  '09.00 - 11.00 WIB (Pagi)',
-  '13.00 - 15.00 WIB (Siang)',
-  '16.00 - 18.00 WIB (Sore / Golden Hour)'
-];
+/* ============================================================
+   FUNGSI BANTU
+   ============================================================ */
+
+const isCustomPackage = (pkg: PackageItem) => pkg.name.includes('Semaumu');
+
+// Mengubah "2026-11-20" menjadi "Jumat, 20 November 2026" tanpa pergeseran zona waktu
+const formatDateID = (iso: string) => {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-').map(Number);
+  if (!y || !m || !d) return iso;
+  return new Date(y, m - 1, d).toLocaleDateString('id-ID', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+};
+
+// Validasi lokasi: mengembalikan pesan error, atau undefined kalau sudah benar
+const validateLocation = (loc: LocationData): string | undefined => {
+  const t = locationTypes.find(x => x.id === loc.type) ?? locationTypes[0];
+  if (t.required && loc.address.trim().length < 3) {
+    return 'Isi nama spot atau alamat lokasi sesi foto.';
+  }
+  return undefined;
+};
+
+// Merangkum lokasi menjadi teks rapi untuk pesan WhatsApp
+const buildLocationText = (loc: LocationData): string => {
+  const t = locationTypes.find(x => x.id === loc.type) ?? locationTypes[0];
+  const lines: string[] = [`${t.label} - ${loc.area}`];
+  if (loc.address.trim()) lines.push(loc.address.trim());
+  if (loc.landmark.trim()) lines.push(`Patokan: ${loc.landmark.trim()}`);
+  if (transportAreas.includes(loc.area)) lines.push('Catatan: area ini ada tambahan transport');
+  return lines.join('\n   ');
+};
+
+const inputClass = (hasError?: boolean) =>
+  `w-full px-4 py-3 rounded-xl border ${
+    hasError ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : 'border-neutral-200 focus:border-amber-500 focus:ring-amber-200'
+  } focus:ring-2 outline-none text-neutral-800 bg-neutral-50 text-sm`;
+
+/* ============================================================
+   KOMPONEN KECIL
+   ============================================================ */
+
+function Field({
+  label,
+  icon,
+  error,
+  htmlFor,
+  children
+}: {
+  label: string;
+  icon?: ReactNode;
+  error?: string;
+  htmlFor?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div>
+      <label htmlFor={htmlFor} className="text-sm font-semibold text-neutral-800 mb-2 flex items-center gap-2">
+        {icon}
+        {label}
+      </label>
+      {children}
+      {error && (
+        <p role="alert" className="text-xs text-red-600 mt-1.5">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// Kolom lokasi terstruktur (teks manual, tanpa peta / sharelock)
+function LocationFields({
+  value,
+  onChange,
+  error,
+  idPrefix
+}: {
+  value: LocationData;
+  onChange: (next: LocationData) => void;
+  error?: string;
+  idPrefix: string;
+}) {
+  const typeInfo = locationTypes.find(t => t.id === value.type) ?? locationTypes[0];
+  const showSpots = value.type === 'outdoor';
+  const needsTransport = transportAreas.includes(value.area);
+  const set = (patch: Partial<LocationData>) => onChange({ ...value, ...patch });
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <span className="text-xs font-semibold text-neutral-600 mb-1.5 block">Jenis lokasi</span>
+        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Jenis lokasi">
+          {locationTypes.map(t => {
+            const active = value.type === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => set({ type: t.id })}
+                className={`text-xs px-3.5 py-2 rounded-full border transition-colors ${
+                  active
+                    ? 'bg-neutral-900 text-white border-neutral-900 font-semibold'
+                    : 'bg-white text-neutral-700 border-neutral-200 hover:border-amber-400'
+                }`}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor={`${idPrefix}-area`} className="text-xs font-semibold text-neutral-600 mb-1.5 block">
+          Wilayah
+        </label>
+        <select
+          id={`${idPrefix}-area`}
+          value={value.area}
+          onChange={e => set({ area: e.target.value })}
+          className={inputClass()}
+        >
+          {areaOptions.map(a => (
+            <option key={a} value={a}>
+              {a}
+            </option>
+          ))}
+        </select>
+        {needsTransport && (
+          <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-2">
+            Area ini ada tambahan biaya transport. Nominalnya kami konfirmasi lewat WhatsApp.
+          </p>
+        )}
+      </div>
+
+      <div>
+        <label htmlFor={`${idPrefix}-address`} className="text-xs font-semibold text-neutral-600 mb-1.5 block">
+          {typeInfo.addressLabel}
+        </label>
+        <textarea
+          id={`${idPrefix}-address`}
+          rows={2}
+          value={value.address}
+          onChange={e => set({ address: e.target.value })}
+          placeholder={typeInfo.placeholder}
+          aria-invalid={!!error}
+          className={inputClass(!!error)}
+        />
+        {showSpots && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {popularSpots.map(spot => (
+              <button
+                type="button"
+                key={spot}
+                onClick={() => set({ address: spot, area: areaOptions[0] })}
+                className="text-xs px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-900 hover:bg-amber-100 transition-colors"
+              >
+                {spot}
+              </button>
+            ))}
+          </div>
+        )}
+        {error && (
+          <p role="alert" className="text-xs text-red-600 mt-1.5">
+            {error}
+          </p>
+        )}
+      </div>
+
+      <div>
+        <label htmlFor={`${idPrefix}-landmark`} className="text-xs font-semibold text-neutral-600 mb-1.5 block">
+          Patokan atau catatan (opsional)
+        </label>
+        <input
+          id={`${idPrefix}-landmark`}
+          type="text"
+          value={value.landmark}
+          onChange={e => set({ landmark: e.target.value })}
+          placeholder="Mis. depan toko biru, masuk gang sebelah masjid"
+          className={inputClass()}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   HALAMAN UTAMA
+   ============================================================ */
 
 export default function LandingPage() {
-  const [selectedCategory, setSelectedCategory] = useState<null | typeof categories[0]>(null);
-  const [selectedSub, setSelectedSub] = useState<null | typeof categories[0]['subcategories'][0]>(null);
-  
-  // Wizard / Kalkulator State
+  // Navigasi tampilan
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [selectedSub, setSelectedSub] = useState<SubCategory | null>(null);
+  const [selectedPackageForBooking, setSelectedPackageForBooking] = useState<PackageItem | null>(null);
+
+  // Form booking paket
+  const [bookingName, setBookingName] = useState('');
+  const [bookingDate, setBookingDate] = useState('');
+  const [bookingTime, setBookingTime] = useState(availableTimeSlots[0]);
+  const [bookingLoc, setBookingLoc] = useState<LocationData>(emptyLocation);
+  const [bookingErrors, setBookingErrors] = useState<Record<string, string>>({});
+
+  // Wizard / kalkulator
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
   const [wizardCatId, setWizardCatId] = useState(categories[0].id);
   const [wizardSubId, setWizardSubId] = useState(categories[0].subcategories[0].id);
-  const [wizardPeopleCount, setWizardPeopleCount] = useState('1-2 orang');
-  const [wizardDuration, setWizardDuration] = useState('Standar (1-2 jam)');
+  const [wizardPkgIdx, setWizardPkgIdx] = useState<number | null>(null);
+  const [wizardName, setWizardName] = useState('');
+  const [wizardPeople, setWizardPeople] = useState('');
   const [wizardDate, setWizardDate] = useState('');
   const [wizardTime, setWizardTime] = useState(availableTimeSlots[0]);
-  const [wizardLocation, setWizardLocation] = useState('');
+  const [wizardLoc, setWizardLoc] = useState<LocationData>(emptyLocation);
+  const [wizardNote, setWizardNote] = useState('');
+  const [wizardErrors, setWizardErrors] = useState<Record<string, string>>({});
 
-  const [bookingDate, setBookingDate] = useState('');
-  const [bookingTime, setBookingTime] = useState(availableTimeSlots[0]);
-  const [locationText, setLocationText] = useState('');
-  const [selectedPackageForBooking, setSelectedPackageForBooking] = useState<{ name: string; price: string; spec: string } | null>(null);
-
-  // State Peta Interaktif Pinpoint
-  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
-  const [mapCoords, setMapCoords] = useState({ lat: -7.9666, lng: 112.6326 });
-  const [addressTitle, setAddressTitle] = useState('Alun-Alun Kota Malang (Titik Pusat)');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [isDetectingGPS, setIsDetectingGPS] = useState(false);
-
+  // Lain-lain
+  const [minDate, setMinDate] = useState('');
   const [openFaqIndex, setOpenFaqIndex] = useState<string | null>(null);
+  const [logoError, setLogoError] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isFirstRender = useRef(true);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Tanggal minimum = hari ini (waktu lokal perangkat), dihitung di client agar tidak terjadi mismatch hydration
+  useEffect(() => {
+    const now = new Date();
+    const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+    setMinDate(local.toISOString().split('T')[0]);
+  }, []);
+
+  // Card kategori selalu mulai dari posisi paling kiri saat dibuka / di-refresh
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ left: 0, behavior: 'auto' });
+  }, [selectedCategory]);
+
+  // Scroll ke atas setiap pindah tampilan (kategori -> sub -> paket -> form)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [selectedCategory, selectedSub, selectedPackageForBooking]);
+
+  // Modal wizard: tutup dengan Escape dan kunci scroll halaman di belakangnya
+  useEffect(() => {
+    if (!isWizardOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsWizardOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isWizardOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
+  }, []);
+
+  const showToast = (message: string) => {
+    setToast(message);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 4500);
+  };
+
+  const openWhatsApp = (text: string) => {
+    const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`;
+    const win = window.open(url, '_blank');
+    if (win) {
+      win.opener = null;
+    } else {
+      // Popup diblokir browser: buka di tab yang sama
+      window.location.href = url;
+      return;
+    }
+    showToast('Membuka WhatsApp. Tinggal kirim pesannya ya!');
+  };
 
   const scrollCard = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
@@ -248,100 +618,117 @@ export default function LandingPage() {
     setOpenFaqIndex(openFaqIndex === key ? null : key);
   };
 
+  const resetViews = () => {
+    setSelectedCategory(null);
+    setSelectedSub(null);
+    setSelectedPackageForBooking(null);
+  };
+
+  const goHome = () => {
+    if (selectedCategory) {
+      resetViews();
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const goToSection = (id: string) => {
+    const onHome = !selectedCategory;
+    if (!onHome) resetViews();
+    window.setTimeout(
+      () => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+      onHome ? 0 : 250
+    );
+  };
+
+  /* ---------- Wizard ---------- */
+
+  const activeWizardCat = categories.find(c => c.id === wizardCatId) || categories[0];
+  const activeWizardSub =
+    activeWizardCat.subcategories.find(s => s.id === wizardSubId) || activeWizardCat.subcategories[0];
+  const wizardPkg = wizardPkgIdx !== null ? activeWizardSub.packages[wizardPkgIdx] : null;
+
   const handleOpenWizard = () => {
     setIsWizardOpen(true);
     setWizardStep(1);
+    setWizardErrors({});
   };
 
-  const handleSearchLocation = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    setIsSearching(true);
-    try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery + ' Malang')}`);
-      const data = await res.json();
-      setSearchResults(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleDetectGPS = () => {
-    setIsDetectingGPS(true);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          setMapCoords({ lat, lng });
-          setAddressTitle(`Lokasi GPS Terkini (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
-          setIsDetectingGPS(false);
-        },
-        (err) => {
-          setIsDetectingGPS(false);
-          alert('Gagal mendeteksi lokasi GPS.');
-        },
-        { timeout: 10000 }
-      );
-    } else {
-      setIsDetectingGPS(false);
-      alert('Browser tidak mendukung geolokasi.');
-    }
-  };
-
-  const handleWizardSubmitWhatsApp = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!wizardDate) {
-      alert('Mohon pilih tanggal pemotretan terlebih dahulu.');
+  const handleWizardNext = () => {
+    if (wizardStep === 2 && wizardPkgIdx === null) {
+      setWizardErrors({ pkg: 'Pilih salah satu paket dulu ya.' });
       return;
     }
+    setWizardErrors({});
+    setWizardStep(s => Math.min(3, s + 1));
+  };
 
-    const currentCatObj = categories.find(c => c.id === wizardCatId);
-    const currentSubObj = currentCatObj?.subcategories.find(s => s.id === wizardSubId);
+  const handleWizardSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (wizardStep !== 3 || !wizardPkg) return;
 
-    const message = encodeURIComponent(
-      `Halo Kak, saya booking via Kalkulator Potoin Kamu:\n\n` +
-      `📌 *Kategori*: ${currentCatObj?.title} - ${currentSubObj?.name}\n` +
-      `👥 *Jumlah Orang/Produk*: ${wizardPeopleCount}\n` +
-      `⏱️ *Durasi*: ${wizardDuration}\n` +
-      `📅 *Tanggal*: ${wizardDate}\n` +
-      `⏰ *Jam / Slot*: ${wizardTime}\n` +
-      `📍 *Titik Lokasi Sesi Foto*: ${wizardLocation || 'Belum ditentukan'}\n\n` +
-      `Mohon info ketersediaan jadwalnya ya kak. Terima kasih!`
+    const errs: Record<string, string> = {};
+    if (!wizardName.trim()) errs.name = 'Isi nama pemesan.';
+    if (!wizardDate) errs.date = 'Pilih tanggal pemotretan.';
+    else if (minDate && wizardDate < minDate) errs.date = 'Tanggal tidak boleh sudah lewat.';
+    const locErr = validateLocation(wizardLoc);
+    if (locErr) errs.location = locErr;
+    setWizardErrors(errs);
+    if (Object.keys(errs).length) return;
+
+    const lines = [
+      'Halo Kak, saya booking via Kalkulator Potoin Kamu:',
+      '',
+      `🙋 *Nama*: ${wizardName.trim()}`,
+      `📌 *Kategori*: ${activeWizardCat.title} - ${activeWizardSub.name}`,
+      `✨ *Paket*: ${wizardPkg.name} (${wizardPkg.price})`,
+      `📋 *Detail*: ${wizardPkg.spec}`
+    ];
+    if (wizardPeople.trim()) lines.push(`👥 *Jumlah orang/produk*: ${wizardPeople.trim()}`);
+    lines.push(
+      `📅 *Tanggal*: ${formatDateID(wizardDate)}`,
+      `⏰ *Jam / slot*: ${wizardTime}`,
+      `📍 *Lokasi*:\n   ${buildLocationText(wizardLoc)}`
     );
+    if (wizardNote.trim()) lines.push(`📝 *Catatan*: ${wizardNote.trim()}`);
+    lines.push('', 'Mohon info ketersediaan jadwalnya ya kak. Terima kasih!');
 
-    window.open(`https://wa.me/628135353498?text=${message}`, '_blank');
+    openWhatsApp(lines.join('\n'));
     setIsWizardOpen(false);
   };
 
-  const handlePackageBookingWhatsApp = (pkg: { name: string; price: string; spec: string }) => {
-    setSelectedPackageForBooking(pkg);
-  };
+  /* ---------- Booking dari kartu paket ---------- */
 
-  const handleFinalBookingSubmit = (e: React.FormEvent) => {
+  const handleFinalBookingSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!bookingDate) {
-      alert('Mohon pilih tanggal.');
-      return;
-    }
+    if (!selectedPackageForBooking) return;
 
-    const message = encodeURIComponent(
-      `Halo Kak, saya ingin booking paket Potoin Kamu:\n\n` +
-      `📌 *Sub-Kategori*: ${selectedSub?.name}\n` +
-      `✨ *Paket*: ${selectedPackageForBooking?.name} (${selectedPackageForBooking?.price})\n` +
-      `📋 *Detail*: ${selectedPackageForBooking?.spec}\n` +
-      `📅 *Tanggal*: ${bookingDate}\n` +
-      `⏰ *Jam / Slot*: ${bookingTime}\n` +
-      `📍 *Titik Lokasi Sesi Foto*: ${locationText || 'Belum ditentukan'}\n\n` +
-      `Mohon konfirmasinya ya kak!`
-    );
+    const errs: Record<string, string> = {};
+    if (!bookingName.trim()) errs.name = 'Isi nama pemesan.';
+    if (!bookingDate) errs.date = 'Pilih tanggal pemotretan.';
+    else if (minDate && bookingDate < minDate) errs.date = 'Tanggal tidak boleh sudah lewat.';
+    const locErr = validateLocation(bookingLoc);
+    if (locErr) errs.location = locErr;
+    setBookingErrors(errs);
+    if (Object.keys(errs).length) return;
 
-    window.open(`https://wa.me/628135353498?text=${message}`, '_blank');
+    const lines = [
+      'Halo Kak, saya ingin booking paket Potoin Kamu:',
+      '',
+      `🙋 *Nama*: ${bookingName.trim()}`,
+      `📌 *Sub-kategori*: ${selectedSub?.name}`,
+      `✨ *Paket*: ${selectedPackageForBooking.name} (${selectedPackageForBooking.price})`,
+      `📋 *Detail*: ${selectedPackageForBooking.spec}`,
+      `📅 *Tanggal*: ${formatDateID(bookingDate)}`,
+      `⏰ *Jam / slot*: ${bookingTime}`,
+      `📍 *Lokasi*:\n   ${buildLocationText(bookingLoc)}`,
+      '',
+      'Mohon konfirmasinya ya kak!'
+    ];
+    openWhatsApp(lines.join('\n'));
   };
 
-  const activeWizardCat = categories.find(c => c.id === wizardCatId) || categories[0];
+  const wizardStepLabels = ['Kategori', 'Paket', 'Jadwal & lokasi'];
 
   return (
     <main className="min-h-screen bg-white text-neutral-900 font-sans selection:bg-amber-200">
@@ -355,6 +742,9 @@ export default function LandingPage() {
         }
         body {
           font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        html {
+          scroll-behavior: smooth;
         }
         .no-scrollbar::-webkit-scrollbar {
           display: none;
@@ -370,11 +760,26 @@ export default function LandingPage() {
         .animate-scale-pulse {
           animation: pulse-scale 2s ease-in-out infinite;
         }
+        @media (prefers-reduced-motion: reduce) {
+          html { scroll-behavior: auto; }
+          .animate-scale-pulse { animation: none; }
+        }
       `}</style>
+
+      {/* Toast notifikasi */}
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60] bg-neutral-900 text-white text-sm font-medium px-5 py-3 rounded-full shadow-2xl max-w-[90vw] text-center"
+        >
+          {toast}
+        </div>
+      )}
 
       {/* Floating WhatsApp CTA */}
       <a
-        href="https://wa.me/628135353498?text=Halo%20Kak,%20saya%20mau%20konsultasi%20dulu%20tentang%20jasa%20fotografinya."
+        href={`https://wa.me/${WA_NUMBER}?text=Halo%20Kak,%20saya%20mau%20konsultasi%20dulu%20tentang%20jasa%20fotografinya.`}
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-emerald-600 text-white px-5 py-3.5 rounded-full shadow-2xl hover:bg-emerald-700 transition-all duration-300 hover:scale-105 font-medium text-sm md:text-base border border-emerald-500/30"
@@ -383,16 +788,52 @@ export default function LandingPage() {
         <span className="tracking-wide">konsultasi dulu</span>
       </a>
 
+      {/* Navbar */}
+      <nav
+        aria-label="Navigasi utama"
+        className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-neutral-100"
+      >
+        <div className="max-w-6xl mx-auto px-4 md:px-6 h-14 flex items-center justify-between gap-4">
+          <button onClick={goHome} className="font-serif font-bold text-lg text-neutral-900 hover:text-amber-700 transition-colors">
+            Potoin Kamu
+          </button>
+
+          <div className="hidden md:flex items-center gap-6">
+            {navLinks.map(link => (
+              <button
+                key={link.id}
+                onClick={() => goToSection(link.id)}
+                className="text-sm font-medium text-neutral-600 hover:text-amber-700 transition-colors"
+              >
+                {link.label}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={handleOpenWizard}
+            className="bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white text-xs md:text-sm font-semibold px-4 py-2 rounded-full transition-all"
+          >
+            Potoin aku
+          </button>
+        </div>
+      </nav>
+
       {/* Header & Hero */}
       <header className="max-w-5xl mx-auto px-6 pt-12 pb-8 text-center">
         <div className="flex justify-center mb-6">
-          <div className="relative h-14 w-48">
-            <img
-              src="/logo.png"
-              alt="Potoin Kamu Logo"
-              className="object-contain h-full w-full"
-            />
-          </div>
+          {logoError ? (
+            <span className="font-serif text-3xl font-bold text-neutral-900">Potoin Kamu</span>
+          ) : (
+            <div className="relative h-14 w-48">
+              <img
+                src="/logo.png"
+                alt="Potoin Kamu Logo"
+                className="object-contain h-full w-full"
+                onError={() => setLogoError(true)}
+              />
+            </div>
+          )}
         </div>
 
         <h1 className="font-serif text-3xl md:text-5xl font-bold tracking-tight text-neutral-900 mb-4 leading-tight">
@@ -401,23 +842,54 @@ export default function LandingPage() {
         <p className="text-neutral-600 text-base md:text-lg max-w-2xl mx-auto font-light leading-relaxed">
           Jasa Fotografi Profesional untuk Segala Kebutuhanmu.
         </p>
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-8">
+          <button
+            onClick={() => goToSection('kategori')}
+            className="w-full sm:w-auto bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white font-semibold px-7 py-3.5 rounded-2xl shadow-lg transition-all text-sm"
+          >
+            Lihat paket dan harga
+          </button>
+          <button
+            onClick={handleOpenWizard}
+            className="w-full sm:w-auto bg-white hover:bg-amber-50 text-neutral-900 font-semibold px-7 py-3.5 rounded-2xl border border-neutral-300 hover:border-amber-400 transition-all text-sm"
+          >
+            Hitung pesananku
+          </button>
+        </div>
+
+        <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-8 text-sm text-neutral-600">
+          <li className="flex items-center gap-1.5">
+            <Check className="w-4 h-4 text-emerald-600" />
+            DP 50% untuk kunci jadwal
+          </li>
+          <li className="flex items-center gap-1.5">
+            <Check className="w-4 h-4 text-emerald-600" />
+            Reschedule gratis 1x kalau cuaca buruk
+          </li>
+          <li className="flex items-center gap-1.5">
+            <Check className="w-4 h-4 text-emerald-600" />
+            Melayani Malang, Batu, dan Surabaya
+          </li>
+        </ul>
       </header>
 
       {/* Main Section */}
       <section className="max-w-6xl mx-auto px-4 pb-20">
         {!selectedCategory ? (
           <>
-            <div className="text-center mb-6">
+            <div id="kategori" className="scroll-mt-20 text-center mb-6">
               <h2 className="font-serif text-2xl md:text-3xl font-bold text-neutral-900">
                 Portofolio & Kategori Foto
               </h2>
               <p className="text-neutral-500 text-sm mt-1">Geser ke samping untuk melihat pilihan kategori lainnya ➔</p>
             </div>
 
-            {/* Stable Manual Horizontal Scrolling Card Grid (Fixed auto-scroll bug) */}
+            {/* Horizontal scrolling manual yang stabil (tidak bergeser otomatis) */}
             <div className="relative max-w-5xl mx-auto">
               <button 
                 onClick={() => scrollCard('left')}
+                aria-label="Geser ke kiri"
                 className="hidden md:flex absolute -left-5 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white shadow-xl rounded-full items-center justify-center text-neutral-800 hover:bg-amber-100 transition-all border border-neutral-200"
               >
                 <ChevronLeft className="w-6 h-6" />
@@ -425,6 +897,7 @@ export default function LandingPage() {
 
               <button 
                 onClick={() => scrollCard('right')}
+                aria-label="Geser ke kanan"
                 className="hidden md:flex absolute -right-5 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white shadow-xl rounded-full items-center justify-center text-neutral-800 hover:bg-amber-100 transition-all border border-neutral-200"
               >
                 <ChevronRight className="w-6 h-6" />
@@ -432,18 +905,20 @@ export default function LandingPage() {
 
               <div 
                 ref={scrollRef}
-                className="flex overflow-x-auto no-scrollbar gap-6 py-6 px-4 snap-x snap-mandatory scroll-smooth"
+                className="flex overflow-x-auto no-scrollbar gap-6 py-6 px-4 snap-x snap-proximity scroll-px-4"
               >
                 {categories.map((cat) => (
                   <div
                     key={cat.id}
-                    className="snap-center flex-shrink-0 w-[85%] md:w-[380px] rounded-3xl overflow-hidden bg-neutral-900 text-white shadow-xl flex flex-col justify-end p-6 md:p-8 relative"
+                    className="snap-start flex-shrink-0 w-[85%] md:w-[380px] rounded-3xl overflow-hidden bg-neutral-900 text-white shadow-xl flex flex-col justify-end p-6 md:p-8 relative"
                     style={{ minHeight: '450px' }}
                   >
                     <div className="absolute inset-0 z-0">
                       <img
                         src={cat.image}
                         alt={cat.title}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-transparent" />
@@ -463,6 +938,7 @@ export default function LandingPage() {
                           onClick={() => {
                             setSelectedCategory(cat);
                             setSelectedSub(null);
+                            setSelectedPackageForBooking(null);
                           }}
                           className="bg-amber-500 hover:bg-amber-400 text-neutral-950 font-semibold py-2 px-4 rounded-xl text-xs flex items-center gap-1 shadow-lg transition-all flex-shrink-0"
                         >
@@ -486,12 +962,63 @@ export default function LandingPage() {
               </button>
             </div>
 
+            {/* Cara booking */}
+            <div id="cara-booking" className="scroll-mt-20 pt-12 border-t border-neutral-100 max-w-4xl mx-auto">
+              <div className="text-center mb-10">
+                <h3 className="font-serif text-2xl md:text-3xl font-bold text-neutral-900">
+                  Cara booking di Potoin Kamu
+                </h3>
+                <p className="text-neutral-500 text-sm mt-1">Empat langkah, dari pilih paket sampai foto jadi.</p>
+              </div>
+
+              <ol className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-8">
+                {bookingSteps.map((step, i) => (
+                  <li key={step.title} className="flex gap-4">
+                    <span
+                      aria-hidden="true"
+                      className="flex-shrink-0 w-9 h-9 rounded-full bg-amber-100 text-amber-900 font-serif font-bold flex items-center justify-center"
+                    >
+                      {i + 1}
+                    </span>
+                    <div>
+                      <h4 className="font-serif font-bold text-neutral-900 text-lg leading-snug">{step.title}</h4>
+                      <p className="text-neutral-600 text-sm leading-relaxed mt-1">{step.desc}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            {/* Area layanan */}
+            <div id="area-layanan" className="scroll-mt-20 mt-20 pt-12 border-t border-neutral-100 max-w-4xl mx-auto">
+              <div className="text-center mb-10">
+                <h3 className="font-serif text-2xl md:text-3xl font-bold text-neutral-900">
+                  Area layanan
+                </h3>
+                <p className="text-neutral-500 text-sm mt-1">
+                  Sesi foto bisa di outdoor, home visit ke rumahmu, atau di studio partner.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {serviceAreas.map(area => (
+                  <div key={area.name} className="border-l-4 border-amber-400 pl-4">
+                    <h4 className="font-serif font-bold text-neutral-900 text-lg leading-snug flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                      {area.name}
+                    </h4>
+                    <p className="text-neutral-600 text-sm leading-relaxed mt-1.5">{area.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Complete FAQ Section with Accordion */}
-            <div className="mt-20 pt-12 border-t border-neutral-100 max-w-3xl mx-auto">
+            <div id="faq" className="scroll-mt-20 mt-20 pt-12 border-t border-neutral-100 max-w-3xl mx-auto">
               <div className="text-center mb-10">
                 <div className="inline-flex items-center gap-2 text-amber-700 bg-amber-50 px-3.5 py-1 rounded-full text-xs font-semibold mb-2">
                   <HelpCircle className="w-3.5 h-3.5" />
-                  FAQ "POTOIN KAMU"
+                  FAQ “POTOIN KAMU”
                 </div>
                 <h3 className="font-serif text-2xl md:text-3xl font-bold text-neutral-900">
                   Yang sering ditanyain sebelum booking
@@ -515,6 +1042,7 @@ export default function LandingPage() {
                           >
                             <button
                               onClick={() => toggleFaq(uniqueKey)}
+                              aria-expanded={isOpen}
                               className="w-full text-left p-5 font-serif font-bold text-neutral-900 text-base md:text-lg flex justify-between items-center gap-4 hover:bg-amber-50/40 transition-colors"
                             >
                               <span>Q: {item.q}</span>
@@ -538,7 +1066,7 @@ export default function LandingPage() {
           /* Sub-Category View */
           <div className="max-w-3xl mx-auto bg-amber-50/40 border border-amber-200/60 rounded-3xl p-6 md:p-10 shadow-xl">
             <button
-              onClick={() => setSelectedCategory(null)}
+              onClick={resetViews}
               className="inline-flex items-center gap-2 text-sm font-semibold text-amber-800 hover:text-amber-950 mb-6 bg-white px-4 py-2 rounded-full shadow-sm border border-amber-200/60 transition-all hover:scale-105"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -565,6 +1093,8 @@ export default function LandingPage() {
                     <img
                       src={sub.image}
                       alt={sub.name}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -573,7 +1103,10 @@ export default function LandingPage() {
                     <h4 className="font-serif text-xl font-bold text-neutral-900 mb-1">{sub.name}</h4>
                     <p className="text-neutral-600 text-sm mb-4">{sub.desc}</p>
                     <button
-                      onClick={() => setSelectedSub(sub)}
+                      onClick={() => {
+                        setSelectedSub(sub);
+                        setSelectedPackageForBooking(null);
+                      }}
                       className="w-full md:w-auto bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 text-sm flex items-center justify-center gap-2 shadow-md"
                     >
                       <Check className="w-4 h-4" />
@@ -607,7 +1140,7 @@ export default function LandingPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {selectedSub.packages.map((pkg, i) => {
-                const isCustom = pkg.name.includes('Semaumu');
+                const isCustom = isCustomPackage(pkg);
                 return (
                   <div 
                     key={i}
@@ -618,9 +1151,9 @@ export default function LandingPage() {
                     }`}
                   >
                     <div>
-                      <div className="flex justify-between items-start mb-3">
+                      <div className="flex justify-between items-start mb-3 gap-3">
                         <h3 className="font-serif text-xl font-bold text-neutral-900">{pkg.name}</h3>
-                        <span className="bg-amber-100 text-amber-900 font-mono font-bold text-sm px-3 py-1 rounded-full">
+                        <span className="bg-amber-100 text-amber-900 font-mono font-bold text-sm px-3 py-1 rounded-full flex-shrink-0">
                           {pkg.price}
                         </span>
                       </div>
@@ -641,7 +1174,7 @@ export default function LandingPage() {
 
                     {!isCustom ? (
                       <button
-                        onClick={() => handlePackageBookingWhatsApp(pkg)}
+                        onClick={() => setSelectedPackageForBooking(pkg)}
                         className="w-full bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white font-semibold py-3 px-4 rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow"
                       >
                         <Check className="w-4 h-4" />
@@ -649,7 +1182,7 @@ export default function LandingPage() {
                       </button>
                     ) : (
                       <a
-                        href="https://wa.me/628135353498?text=Halo%20Kak,%20saya%20punya%20ide%20konsep%20custom%20sendiri%20untuk%20sesi%20foto."
+                        href={`https://wa.me/${WA_NUMBER}?text=Halo%20Kak,%20saya%20punya%20ide%20konsep%20custom%20sendiri%20untuk%20sesi%20foto.`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow"
@@ -664,7 +1197,7 @@ export default function LandingPage() {
             </div>
           </div>
         ) : (
-          /* Final Booking Form with Pinpoint Map Selector */
+          /* Final Booking Form dengan lokasi teks terstruktur */
           <div className="max-w-2xl mx-auto bg-white border border-amber-200/80 rounded-3xl p-6 md:p-10 shadow-xl">
             <button
               onClick={() => setSelectedPackageForBooking(null)}
@@ -684,65 +1217,100 @@ export default function LandingPage() {
               <p className="text-neutral-600 text-xs mt-1">{selectedPackageForBooking.spec}</p>
             </div>
 
-            <form onSubmit={handleFinalBookingSubmit} className="space-y-5">
-              <div>
-                <label className="block text-sm font-semibold text-neutral-800 mb-2 flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-amber-600" />
-                  Pilih Tanggal Pemotretan
-                </label>
+            <form onSubmit={handleFinalBookingSubmit} noValidate className="space-y-5">
+              <Field
+                label="Nama Pemesan"
+                htmlFor="booking-name"
+                icon={<User className="w-4 h-4 text-amber-600" />}
+                error={bookingErrors.name}
+              >
                 <input
+                  id="booking-name"
+                  type="text"
+                  value={bookingName}
+                  onChange={(e) => setBookingName(e.target.value)}
+                  placeholder="Tulis namamu"
+                  aria-invalid={!!bookingErrors.name}
+                  className={inputClass(!!bookingErrors.name)}
+                />
+              </Field>
+
+              <Field
+                label="Pilih Tanggal Pemotretan"
+                htmlFor="booking-date"
+                icon={<Calendar className="w-4 h-4 text-amber-600" />}
+                error={bookingErrors.date}
+              >
+                <input
+                  id="booking-date"
                   type="date"
-                  required
+                  min={minDate}
                   value={bookingDate}
                   onChange={(e) => setBookingDate(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none text-neutral-800 bg-neutral-50"
+                  aria-invalid={!!bookingErrors.date}
+                  className={inputClass(!!bookingErrors.date)}
                 />
-              </div>
+              </Field>
 
-              <div>
-                <label className="block text-sm font-semibold text-neutral-800 mb-2 flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-amber-600" />
-                  Pilih Sesi Jam / Waktu
-                </label>
+              <Field
+                label="Pilih Sesi Jam / Waktu"
+                htmlFor="booking-time"
+                icon={<Clock className="w-4 h-4 text-amber-600" />}
+              >
                 <select
+                  id="booking-time"
                   value={bookingTime}
                   onChange={(e) => setBookingTime(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none text-neutral-800 bg-neutral-50"
+                  className={inputClass()}
                 >
                   {availableTimeSlots.map((slot, i) => (
                     <option key={i} value={slot}>{slot}</option>
                   ))}
                 </select>
-              </div>
+              </Field>
 
               <div>
-                <label className="block text-sm font-semibold text-neutral-800 mb-2 flex items-center gap-2">
+                <span className="text-sm font-semibold text-neutral-800 mb-3 flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-amber-600" />
-                  Titik Lokasi Sesi Foto
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    required
-                    readOnly
-                    placeholder="Tentukan titik lokasi via peta..."
-                    value={locationText}
-                    className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none text-neutral-800 bg-neutral-50 text-sm cursor-pointer"
-                    onClick={() => setIsMapModalOpen(true)}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setIsMapModalOpen(true)}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-3 rounded-xl text-sm flex items-center gap-1.5 flex-shrink-0 shadow-md transition-all"
-                  >
-                    <Navigation className="w-4 h-4" />
-                    <span>Pilih di Peta</span>
-                  </button>
-                </div>
-                <p className="text-xs text-neutral-500 mt-1.5">Klik "Pilih di Peta" untuk menentukan titik lokasi seperti aplikasi ojek online.</p>
+                  Lokasi Sesi Foto
+                </span>
+                <LocationFields
+                  idPrefix="booking-loc"
+                  value={bookingLoc}
+                  onChange={setBookingLoc}
+                  error={bookingErrors.location}
+                />
               </div>
 
-              <div className="pt-4">
+              {/* Ringkasan pesanan */}
+              <div className="rounded-2xl bg-amber-50/60 border border-amber-200/70 p-4 text-sm">
+                <p className="font-serif font-bold text-neutral-900 mb-2">Ringkasan pesananmu</p>
+                <dl className="space-y-1.5 text-neutral-700">
+                  <div className="flex gap-2">
+                    <dt className="w-20 flex-shrink-0 text-neutral-500">Paket</dt>
+                    <dd className="font-medium">{selectedPackageForBooking.name} ({selectedPackageForBooking.price})</dd>
+                  </div>
+                  <div className="flex gap-2">
+                    <dt className="w-20 flex-shrink-0 text-neutral-500">Tanggal</dt>
+                    <dd className="font-medium">{bookingDate ? formatDateID(bookingDate) : 'Belum dipilih'}</dd>
+                  </div>
+                  <div className="flex gap-2">
+                    <dt className="w-20 flex-shrink-0 text-neutral-500">Jam</dt>
+                    <dd className="font-medium">{bookingTime}</dd>
+                  </div>
+                  <div className="flex gap-2">
+                    <dt className="w-20 flex-shrink-0 text-neutral-500">Lokasi</dt>
+                    <dd className="font-medium">
+                      {bookingLoc.address.trim()
+                        ? `${bookingLoc.address.trim()} (${bookingLoc.area})`
+                        : `Belum diisi (${bookingLoc.area})`}
+                    </dd>
+                  </div>
+                </dl>
+                <p className="text-xs text-neutral-500 mt-3">DP 50% untuk mengunci tanggal, pelunasan setelah sesi foto selesai.</p>
+              </div>
+
+              <div className="pt-2">
                 <button
                   type="submit"
                   className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 shadow-xl hover:scale-[1.01]"
@@ -756,144 +1324,50 @@ export default function LandingPage() {
         )}
       </section>
 
-      {/* MODAL PETA INTERAKTIF PINPOINT */}
-      {isMapModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl relative max-h-[95vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4 border-b pb-3">
-              <div className="flex items-center gap-2">
-                <Navigation className="w-5 h-5 text-emerald-600" />
-                <h3 className="font-serif text-lg font-bold text-neutral-900">Pin Lokasi Sesi Foto</h3>
-              </div>
-              <button 
-                onClick={() => setIsMapModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center font-bold text-neutral-600 hover:bg-neutral-200"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Kotak Pencarian Tempat */}
-            <form onSubmit={handleSearchLocation} className="flex gap-2 mb-3">
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3.5" />
-                <input
-                  type="text"
-                  placeholder="Cari lokasi, jalan, atau gedung..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-neutral-200 text-sm outline-none focus:border-emerald-500 bg-neutral-50"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={isSearching}
-                className="bg-neutral-900 hover:bg-neutral-800 text-white font-medium px-5 py-2.5 rounded-xl text-sm transition-all flex-shrink-0"
-              >
-                {isSearching ? 'Mencari...' : 'Cari'}
-              </button>
-            </form>
-
-            {/* Hasil Pencarian */}
-            {searchResults.length > 0 && (
-              <div className="mb-3 max-h-36 overflow-y-auto border rounded-xl p-2 bg-neutral-50 space-y-1">
-                {searchResults.map((item, i) => (
-                  <div
-                    key={i}
-                    onClick={() => {
-                      setMapCoords({ lat: parseFloat(item.lat), lng: parseFloat(item.lon) });
-                      setAddressTitle(item.display_name);
-                      setSearchResults([]);
-                    }}
-                    className="p-2 hover:bg-emerald-100 rounded-lg cursor-pointer text-xs text-neutral-800 font-medium"
-                  >
-                    📍 {item.display_name}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Tombol GPS Terkini */}
-            <button
-              type="button"
-              onClick={handleDetectGPS}
-              disabled={isDetectingGPS}
-              className="w-full mb-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all text-xs shadow-sm"
-            >
-              <Crosshair className={`w-4 h-4 text-emerald-600 ${isDetectingGPS ? 'animate-spin' : ''}`} />
-              <span>{isDetectingGPS ? 'Mendeteksi GPS...' : 'Gunakan Lokasi Terkini Saya (GPS)'}</span>
-            </button>
-
-            {/* Area Peta Interaktif */}
-            <div className="relative w-full h-72 rounded-2xl overflow-hidden border border-neutral-200 shadow-inner mb-4 z-10">
-              <iframe
-                title="Interactive Map"
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                loading="lazy"
-                src={`https://www.openstreetmap.org/export/embed.html?bbox=${mapCoords.lng - 0.01}%2C${mapCoords.lat - 0.01}%2C${mapCoords.lng + 0.01}%2C${mapCoords.lat + 0.01}&layer=mapnik&marker=${mapCoords.lat}%2C${mapCoords.lng}`}
-              />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-20 flex flex-col items-center">
-                <div className="bg-neutral-900 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-lg whitespace-nowrap mb-1">
-                  📍 Titik Sesi Foto
-                </div>
-                <div className="w-4 h-4 bg-emerald-600 rounded-full border-2 border-white shadow-xl animate-bounce" />
-              </div>
-            </div>
-
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5">
-              <span className="text-[11px] font-bold text-amber-800 block mb-0.5">Alamat Terpilih:</span>
-              <p className="text-xs text-neutral-800 font-medium">{addressTitle}</p>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setIsMapModalOpen(false)}
-                className="w-1/3 bg-neutral-200 hover:bg-neutral-300 text-neutral-800 font-semibold py-3 rounded-xl transition-all text-sm"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const finalStr = `${addressTitle} (Koordinat: ${mapCoords.lat.toFixed(4)}, ${mapCoords.lng.toFixed(4)})`;
-                  setLocationText(finalStr);
-                  setWizardLocation(finalStr);
-                  setIsMapModalOpen(false);
-                }}
-                className="w-2/3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl transition-all shadow-md text-sm flex items-center justify-center gap-2"
-              >
-                <Check className="w-4 h-4" />
-                <span>Konfirmasi Titik Lokasi Ini</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* WIZARD MODAL / KALKULATOR */}
       {isWizardOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 md:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6 border-b pb-4">
+        <div
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsWizardOpen(false);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Kalkulator Potoin Aku"
+            className="bg-white rounded-3xl max-w-xl w-full p-6 md:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto"
+          >
+            <div className="flex justify-between items-center mb-5 border-b pb-4">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-amber-600" />
-                <h3 className="font-serif text-xl font-bold text-neutral-900">Kalkulator "Potoin Aku"</h3>
+                <h3 className="font-serif text-xl font-bold text-neutral-900">Kalkulator “Potoin Aku”</h3>
               </div>
               <button 
                 onClick={() => setIsWizardOpen(false)}
+                aria-label="Tutup kalkulator"
                 className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center font-bold text-neutral-600 hover:bg-neutral-200"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleWizardSubmitWhatsApp} className="space-y-5">
+            {/* Indikator langkah */}
+            <ol className="flex gap-2 mb-6" aria-label="Langkah kalkulator">
+              {wizardStepLabels.map((label, i) => (
+                <li key={label} className="flex-1" aria-current={wizardStep === i + 1 ? 'step' : undefined}>
+                  <div className={`h-1.5 rounded-full ${wizardStep >= i + 1 ? 'bg-amber-500' : 'bg-neutral-200'}`} />
+                  <span className={`block text-xs mt-1.5 ${wizardStep === i + 1 ? 'font-semibold text-neutral-900' : 'text-neutral-400'}`}>
+                    {label}
+                  </span>
+                </li>
+              ))}
+            </ol>
+
+            <form onSubmit={handleWizardSubmit} noValidate className="space-y-5">
               {wizardStep === 1 && (
                 <div className="space-y-4">
-                  <label className="block font-semibold text-neutral-900 text-base">1. Pilih Kategori Utama:</label>
+                  <p className="font-semibold text-neutral-900 text-base">Pilih kategori utama</p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     {categories.map(c => (
                       <button
@@ -902,6 +1376,7 @@ export default function LandingPage() {
                         onClick={() => {
                           setWizardCatId(c.id);
                           setWizardSubId(c.subcategories[0].id);
+                          setWizardPkgIdx(null);
                         }}
                         className={`p-4 rounded-2xl border text-left transition-all ${
                           wizardCatId === c.id ? 'border-amber-500 bg-amber-50/60 font-bold' : 'border-neutral-200 hover:border-neutral-300'
@@ -912,13 +1387,16 @@ export default function LandingPage() {
                     ))}
                   </div>
 
-                  <label className="block font-semibold text-neutral-900 text-base mt-4">Pilih Sub-Kategori Spesifik:</label>
+                  <p className="font-semibold text-neutral-900 text-base mt-4">Pilih sub-kategori</p>
                   <div className="grid grid-cols-1 gap-2">
                     {activeWizardCat.subcategories.map(sub => (
                       <button
                         type="button"
                         key={sub.id}
-                        onClick={() => setWizardSubId(sub.id)}
+                        onClick={() => {
+                          setWizardSubId(sub.id);
+                          setWizardPkgIdx(null);
+                        }}
                         className={`p-3 rounded-xl border text-left text-sm transition-all ${
                           wizardSubId === sub.id ? 'border-amber-500 bg-amber-50 font-semibold' : 'border-neutral-200'
                         }`}
@@ -930,7 +1408,7 @@ export default function LandingPage() {
 
                   <button
                     type="button"
-                    onClick={() => setWizardStep(2)}
+                    onClick={handleWizardNext}
                     className="w-full mt-6 bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white font-semibold py-3.5 rounded-xl transition-all"
                   >
                     Selanjutnya ➔
@@ -940,81 +1418,156 @@ export default function LandingPage() {
 
               {wizardStep === 2 && (
                 <div className="space-y-4">
-                  <label className="block font-semibold text-neutral-900 text-base">2. Detail Orang, Durasi & Tanggal:</label>
-                  
                   <div>
-                    <label className="block text-xs font-semibold text-neutral-600 mb-1">Jumlah Orang / Produk:</label>
-                    <input 
-                      type="text" 
-                      value={wizardPeopleCount}
-                      onChange={(e) => setWizardPeopleCount(e.target.value)}
-                      placeholder="Contoh: Sendiri, 2 orang, atau 15 produk"
-                      className="w-full px-4 py-2.5 rounded-xl border text-sm outline-none focus:border-amber-500 bg-neutral-50"
-                    />
+                    <p className="font-semibold text-neutral-900 text-base">Pilih paket</p>
+                    <p className="text-xs text-neutral-500 mt-0.5">{activeWizardSub.name}</p>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-neutral-600 mb-1">Estimasi Waktu / Durasi:</label>
-                    <input 
-                      type="text" 
-                      value={wizardDuration}
-                      onChange={(e) => setWizardDuration(e.target.value)}
-                      placeholder="Contoh: 1 jam, Half day"
-                      className="w-full px-4 py-2.5 rounded-xl border text-sm outline-none focus:border-amber-500 bg-neutral-50"
-                    />
+                  <div className="space-y-3" role="radiogroup" aria-label="Pilihan paket">
+                    {activeWizardSub.packages.map((pkg, i) => {
+                      const active = wizardPkgIdx === i;
+                      const custom = isCustomPackage(pkg);
+                      return (
+                        <button
+                          type="button"
+                          key={i}
+                          role="radio"
+                          aria-checked={active}
+                          onClick={() => {
+                            setWizardPkgIdx(i);
+                            setWizardErrors({});
+                          }}
+                          className={`w-full text-left p-4 rounded-2xl border transition-all ${
+                            active ? 'border-amber-500 bg-amber-50' : 'border-neutral-200 hover:border-amber-300'
+                          }`}
+                        >
+                          <div className="flex justify-between items-start gap-3">
+                            <span className="font-serif font-bold text-neutral-900">{pkg.name}</span>
+                            <span className="bg-amber-100 text-amber-900 font-mono font-bold text-xs px-2.5 py-1 rounded-full flex-shrink-0">
+                              {pkg.price}
+                            </span>
+                          </div>
+                          <p className="text-xs text-neutral-600 mt-1.5">
+                            {custom ? 'Konsep dan budget disesuaikan, kita obrolin dulu via WhatsApp.' : pkg.spec}
+                          </p>
+                          {!custom && <p className="text-xs text-emerald-700 font-medium mt-1">🎁 {pkg.bonus}</p>}
+                        </button>
+                      );
+                    })}
                   </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-neutral-600 mb-1">Pilih Tanggal Foto:</label>
-                    <input 
-                      type="date" 
-                      required
-                      value={wizardDate}
-                      onChange={(e) => setWizardDate(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border text-sm outline-none focus:border-amber-500 bg-neutral-50"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-neutral-600 mb-1">Pilih Sesi Jam:</label>
-                    <select
-                      value={wizardTime}
-                      onChange={(e) => setWizardTime(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border text-sm outline-none focus:border-amber-500 bg-neutral-50"
-                    >
-                      {availableTimeSlots.map((slot, i) => (
-                        <option key={i} value={slot}>{slot}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-neutral-600 mb-1">Titik Lokasi Sesi Foto:</label>
-                    <div className="flex gap-2">
-                      <input 
-                        type="text" 
-                        required
-                        readOnly
-                        value={wizardLocation}
-                        placeholder="Klik 'Pilih di Peta' untuk menentukan titik..."
-                        className="w-full px-4 py-2.5 rounded-xl border text-sm outline-none focus:border-amber-500 bg-neutral-50 cursor-pointer"
-                        onClick={() => setIsMapModalOpen(true)}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setIsMapModalOpen(true)}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-xl text-xs flex items-center gap-1 flex-shrink-0 shadow"
-                      >
-                        <Navigation className="w-3.5 h-3.5" />
-                        <span>Pilih di Peta</span>
-                      </button>
-                    </div>
-                  </div>
+                  {wizardErrors.pkg && (
+                    <p role="alert" className="text-xs text-red-600">{wizardErrors.pkg}</p>
+                  )}
 
                   <div className="flex gap-3 mt-6">
                     <button
                       type="button"
                       onClick={() => setWizardStep(1)}
+                      className="w-1/3 bg-neutral-200 hover:bg-neutral-300 text-neutral-800 font-semibold py-3.5 rounded-xl transition-all text-sm"
+                    >
+                      Kembali
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleWizardNext}
+                      className="w-2/3 bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white font-semibold py-3.5 rounded-xl transition-all text-sm"
+                    >
+                      Selanjutnya ➔
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {wizardStep === 3 && wizardPkg && (
+                <div className="space-y-4">
+                  <div className="rounded-2xl bg-amber-50/70 border border-amber-200 p-4">
+                    <p className="text-xs text-neutral-500">Paket pilihanmu</p>
+                    <div className="flex justify-between items-start gap-3 mt-0.5">
+                      <p className="font-serif font-bold text-neutral-900">{wizardPkg.name}</p>
+                      <p className="font-mono font-bold text-sm text-amber-900 flex-shrink-0">{wizardPkg.price}</p>
+                    </div>
+                    <p className="text-xs text-neutral-600 mt-1">{activeWizardSub.name}</p>
+                    {isCustomPackage(wizardPkg) && (
+                      <p className="text-xs text-neutral-500 mt-1.5">Harga final menyesuaikan konsep yang kamu mau.</p>
+                    )}
+                  </div>
+
+                  <Field label="Nama pemesan" htmlFor="wizard-name" error={wizardErrors.name}>
+                    <input 
+                      id="wizard-name"
+                      type="text" 
+                      value={wizardName}
+                      onChange={(e) => setWizardName(e.target.value)}
+                      placeholder="Tulis namamu"
+                      aria-invalid={!!wizardErrors.name}
+                      className={inputClass(!!wizardErrors.name)}
+                    />
+                  </Field>
+
+                  <Field label="Jumlah orang / produk (opsional)" htmlFor="wizard-people">
+                    <input 
+                      id="wizard-people"
+                      type="text" 
+                      value={wizardPeople}
+                      onChange={(e) => setWizardPeople(e.target.value)}
+                      placeholder="Contoh: Sendiri, 2 orang, atau 15 produk"
+                      className={inputClass()}
+                    />
+                  </Field>
+
+                  <Field label="Tanggal foto" htmlFor="wizard-date" error={wizardErrors.date}>
+                    <input 
+                      id="wizard-date"
+                      type="date" 
+                      min={minDate}
+                      value={wizardDate}
+                      onChange={(e) => setWizardDate(e.target.value)}
+                      aria-invalid={!!wizardErrors.date}
+                      className={inputClass(!!wizardErrors.date)}
+                    />
+                  </Field>
+
+                  <Field label="Sesi jam" htmlFor="wizard-time">
+                    <select
+                      id="wizard-time"
+                      value={wizardTime}
+                      onChange={(e) => setWizardTime(e.target.value)}
+                      className={inputClass()}
+                    >
+                      {availableTimeSlots.map((slot, i) => (
+                        <option key={i} value={slot}>{slot}</option>
+                      ))}
+                    </select>
+                  </Field>
+
+                  <div>
+                    <span className="text-sm font-semibold text-neutral-800 mb-3 flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-amber-600" />
+                      Lokasi sesi foto
+                    </span>
+                    <LocationFields
+                      idPrefix="wizard-loc"
+                      value={wizardLoc}
+                      onChange={setWizardLoc}
+                      error={wizardErrors.location}
+                    />
+                  </div>
+
+                  <Field label="Catatan atau konsep (opsional)" htmlFor="wizard-note">
+                    <textarea
+                      id="wizard-note"
+                      rows={2}
+                      value={wizardNote}
+                      onChange={(e) => setWizardNote(e.target.value)}
+                      placeholder="Mis. tema warna, referensi gaya, atau permintaan khusus"
+                      className={inputClass()}
+                    />
+                  </Field>
+
+                  <div className="flex gap-3 mt-6">
+                    <button
+                      type="button"
+                      onClick={() => setWizardStep(2)}
                       className="w-1/3 bg-neutral-200 hover:bg-neutral-300 text-neutral-800 font-semibold py-3.5 rounded-xl transition-all text-sm"
                     >
                       Kembali
@@ -1034,8 +1587,49 @@ export default function LandingPage() {
         </div>
       )}
 
-      <footer className="text-center py-8 text-neutral-400 text-xs border-t border-neutral-100">
-        &copy; 2026 Potoin Kamu. All rights reserved. UMKM & Student Friendly Photography.
+      {/* Footer */}
+      <footer className="border-t border-neutral-100 bg-neutral-50/60">
+        <div className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-3 gap-10">
+          <div>
+            <p className="font-serif font-bold text-xl text-neutral-900">Potoin Kamu</p>
+            <p className="text-sm text-neutral-600 mt-2 leading-relaxed">
+              Jasa fotografi profesional untuk wilayah Malang dan sekitarnya.
+            </p>
+          </div>
+
+          <div>
+            <p className="font-semibold text-sm text-neutral-900 mb-3">Jelajahi</p>
+            <ul className="space-y-2">
+              {navLinks.map(link => (
+                <li key={link.id}>
+                  <button
+                    onClick={() => goToSection(link.id)}
+                    className="text-sm text-neutral-600 hover:text-amber-700 transition-colors"
+                  >
+                    {link.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <p className="font-semibold text-sm text-neutral-900 mb-3">Hubungi kami</p>
+            <a
+              href={`https://wa.me/${WA_NUMBER}?text=Halo%20Kak,%20saya%20mau%20konsultasi%20dulu%20tentang%20jasa%20fotografinya.`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-5 py-3 rounded-xl transition-all"
+            >
+              <MessageCircle className="w-4 h-4 fill-white text-emerald-600" />
+              Chat via WhatsApp
+            </a>
+          </div>
+        </div>
+
+        <div className="text-center py-6 text-neutral-400 text-xs border-t border-neutral-100">
+          &copy; 2026 Potoin Kamu. All rights reserved. UMKM & Student Friendly Photography.
+        </div>
       </footer>
     </main>
   );
