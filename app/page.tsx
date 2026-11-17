@@ -255,7 +255,7 @@ const faqsData = [
     items: [
       {
         q: 'Gimana cara booking di "potoin kamu"?',
-        a: 'Gampang! Tinggal klik tombol "Potoin aku sekarang" atau pilih langsung paket yang kamu mau di bagian kategori, atau langsung WhatsApp kita.'
+        a: 'Gampang! Tinggal klik tombol "Hitung pesananku" atau pilih langsung paket yang kamu mau di bagian kategori, atau langsung WhatsApp kita.'
       },
       {
         q: 'Harus DP berapa? H- berapa baru boleh booking?',
@@ -820,12 +820,12 @@ export default function LandingPage() {
       </nav>
 
       {/* Header & Hero */}
-      <header className="max-w-5xl mx-auto px-6 pt-12 pb-8 text-center">
-        <div className="flex justify-center mb-6">
+      <header className="max-w-5xl mx-auto px-6 pt-8 pb-2 text-center">
+        <div className="flex justify-center mb-5">
           {logoError ? (
-            <span className="font-serif text-3xl font-bold text-neutral-900">Potoin Kamu</span>
+            <span className="font-serif text-5xl md:text-6xl font-bold text-neutral-900">Potoin Kamu</span>
           ) : (
-            <div className="relative h-14 w-48">
+            <div className="relative h-36 w-72 md:h-52 md:w-[28rem]">
               <img
                 src="/logo.png"
                 alt="Potoin Kamu Logo"
@@ -836,51 +836,21 @@ export default function LandingPage() {
           )}
         </div>
 
-        <h1 className="font-serif text-3xl md:text-5xl font-bold tracking-tight text-neutral-900 mb-4 leading-tight">
+        <h1 className="font-serif text-xl md:text-2xl font-semibold tracking-tight text-neutral-900 mb-2 leading-tight">
           Your Story, Captured.
         </h1>
-        <p className="text-neutral-600 text-base md:text-lg max-w-2xl mx-auto font-light leading-relaxed">
+        <p className="text-neutral-600 text-sm md:text-base max-w-2xl mx-auto font-light leading-relaxed">
           Jasa Fotografi Profesional untuk Segala Kebutuhanmu.
         </p>
-
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-8">
-          <button
-            onClick={() => goToSection('kategori')}
-            className="w-full sm:w-auto bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white font-semibold px-7 py-3.5 rounded-2xl shadow-lg transition-all text-sm"
-          >
-            Lihat paket dan harga
-          </button>
-          <button
-            onClick={handleOpenWizard}
-            className="w-full sm:w-auto bg-white hover:bg-amber-50 text-neutral-900 font-semibold px-7 py-3.5 rounded-2xl border border-neutral-300 hover:border-amber-400 transition-all text-sm"
-          >
-            Hitung pesananku
-          </button>
-        </div>
-
-        <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-8 text-sm text-neutral-600">
-          <li className="flex items-center gap-1.5">
-            <Check className="w-4 h-4 text-emerald-600" />
-            DP 50% untuk kunci jadwal
-          </li>
-          <li className="flex items-center gap-1.5">
-            <Check className="w-4 h-4 text-emerald-600" />
-            Reschedule gratis 1x kalau cuaca buruk
-          </li>
-          <li className="flex items-center gap-1.5">
-            <Check className="w-4 h-4 text-emerald-600" />
-            Melayani Malang, Batu, dan Surabaya
-          </li>
-        </ul>
       </header>
 
       {/* Main Section */}
       <section className="max-w-6xl mx-auto px-4 pb-20">
         {!selectedCategory ? (
           <>
-            <div id="kategori" className="scroll-mt-20 text-center mb-6">
+            <div id="kategori" className="scroll-mt-20 text-center mt-6 mb-6">
               <h2 className="font-serif text-2xl md:text-3xl font-bold text-neutral-900">
-                Portofolio & Kategori Foto
+                Kategori Foto
               </h2>
               <p className="text-neutral-500 text-sm mt-1">Geser ke samping untuk melihat pilihan kategori lainnya ➔</p>
             </div>
@@ -952,14 +922,37 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Potoin Aku Sekarang Button -> Opens Wizard */}
-            <div className="text-center mt-12 mb-16">
-              <button
-                onClick={handleOpenWizard}
-                className="bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white font-semibold px-8 py-4 rounded-2xl shadow-xl transition-all duration-300 text-base tracking-wide animate-scale-pulse"
-              >
-                Potoin aku sekarang ✨
-              </button>
+            {/* Tombol aksi dan keunggulan, di bawah kategori */}
+            <div className="text-center mt-8 mb-16">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button
+                  onClick={() => goToSection('kategori')}
+                  className="w-full sm:w-auto bg-white hover:bg-amber-50 text-neutral-900 font-semibold px-7 py-3.5 rounded-2xl border border-neutral-300 hover:border-amber-400 transition-all text-sm"
+                >
+                  Lihat paket dan harga
+                </button>
+                <button
+                  onClick={handleOpenWizard}
+                  className="w-full sm:w-auto bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white font-semibold px-7 py-3.5 rounded-2xl shadow-lg transition-all text-sm animate-scale-pulse"
+                >
+                  Hitung pesananku
+                </button>
+              </div>
+
+              <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-6 text-sm text-neutral-600">
+                <li className="flex items-center gap-1.5">
+                  <Check className="w-4 h-4 text-emerald-600" />
+                  DP 50% untuk kunci jadwal
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <Check className="w-4 h-4 text-emerald-600" />
+                  Reschedule gratis 1x kalau cuaca buruk
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <Check className="w-4 h-4 text-emerald-600" />
+                  Melayani Malang, Batu, dan Surabaya
+                </li>
+              </ul>
             </div>
 
             {/* Cara booking */}
