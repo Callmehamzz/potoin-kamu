@@ -540,7 +540,8 @@ export default function LandingPage() {
   const [toast, setToast] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const isFirstRender = useRef(true);
+  const logoRef = useRef<HTMLImageElement>(null);
+  const prevViewKey = useRef<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Tanggal minimum = hari ini (waktu lokal perangkat), dihitung di client agar tidak terjadi mismatch hydration
@@ -550,18 +551,25 @@ export default function LandingPage() {
     setMinDate(local.toISOString().split('T')[0]);
   }, []);
 
+  // Jika logo sudah gagal dimuat sebelum hydration selesai, onError terlewat: cek ulang di sini
+  useEffect(() => {
+    const img = logoRef.current;
+    if (img && img.complete && img.naturalWidth === 0) setLogoError(true);
+  }, []);
+
   // Card kategori selalu mulai dari posisi paling kiri saat dibuka / di-refresh
   useEffect(() => {
     scrollRef.current?.scrollTo({ left: 0, behavior: 'auto' });
   }, [selectedCategory]);
 
-  // Scroll ke atas setiap pindah tampilan (kategori -> sub -> paket -> form)
+  // Scroll ke atas hanya saat tampilan benar-benar berpindah (kategori -> sub -> paket -> form),
+  // bukan saat halaman pertama kali dibuka
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
+    const key = `${selectedCategory?.id ?? ''}|${selectedSub?.id ?? ''}|${selectedPackageForBooking?.name ?? ''}`;
+    if (prevViewKey.current !== null && prevViewKey.current !== key) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    prevViewKey.current = key;
   }, [selectedCategory, selectedSub, selectedPackageForBooking]);
 
   // Modal wizard: tutup dengan Escape dan kunci scroll halaman di belakangnya
@@ -827,6 +835,7 @@ export default function LandingPage() {
           ) : (
             <div className="relative h-36 w-72 md:h-52 md:w-[28rem]">
               <img
+                ref={logoRef}
                 src="/logo.png"
                 alt="Potoin Kamu Logo"
                 className="object-contain h-full w-full"
@@ -1167,7 +1176,10 @@ export default function LandingPage() {
 
                     {!isCustom ? (
                       <button
-                        onClick={() => setSelectedPackageForBooking(pkg)}
+                        onClick={() => {
+                          setBookingErrors({});
+                          setSelectedPackageForBooking(pkg);
+                        }}
                         className="w-full bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white font-semibold py-3 px-4 rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow"
                       >
                         <Check className="w-4 h-4" />
@@ -1321,7 +1333,7 @@ export default function LandingPage() {
       {isWizardOpen && (
         <div
           className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={(e) => {
+          onMouseDown={(e) => {
             if (e.target === e.currentTarget) setIsWizardOpen(false);
           }}
         >
