@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { MessageCircle, ArrowLeft, Check, Calendar, Clock, MapPin, HelpCircle, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, Sparkles, User } from 'lucide-react';
 
@@ -8,6 +8,11 @@ import { MessageCircle, ArrowLeft, Check, Calendar, Clock, MapPin, HelpCircle, C
    ============================================================ */
 
 const WA_NUMBER = '628135353498';
+
+// Carousel tanpa batas: set kartu diulang 5x, posisi awal selalu di set tengah
+const CAROUSEL_COPIES = 5;
+const CAROUSEL_MID = 2;
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 type PackageItem = { name: string; price: string; spec: string; bonus: string; ideal: string };
 type SubCategory = { id: string; name: string; desc: string; image: string; packages: PackageItem[] };
@@ -543,6 +548,8 @@ export default function LandingPage() {
   const logoRef = useRef<HTMLImageElement>(null);
   const prevViewKey = useRef<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wrapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const carouselWidth = useRef(0);
 
   // Tanggal minimum = hari ini (waktu lokal perangkat), dihitung di client agar tidak terjadi mismatch hydration
   useEffect(() => {
@@ -557,9 +564,79 @@ export default function LandingPage() {
     if (img && img.complete && img.naturalWidth === 0) setLogoError(true);
   }, []);
 
-  // Card kategori selalu mulai dari posisi paling kiri saat dibuka / di-refresh
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ left: 0, behavior: 'auto' });
+  /* ---------- Carousel kategori tanpa batas ---------- */
+
+  // Lebar satu set kartu (jarak kartu pertama set 1 ke kartu pertama set 2)
+  const getSetWidth = () => {
+    const el = scrollRef.current;
+    if (!el || el.children.length <= categories.length) return 0;
+    const first = el.children[0] as HTMLElement;
+    const next = el.children[categories.length] as HTMLElement;
+    return next.offsetLeft - first.offsetLeft;
+  };
+
+  // Lompat ke posisi tertentu tanpa animasi dan tanpa terganggu snap
+  const jumpTo = (left: number) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const prevSnap = el.style.scrollSnapType;
+    const prevBehavior = el.style.scrollBehavior;
+    el.style.scrollSnapType = 'none';
+    el.style.scrollBehavior = 'auto';
+    el.scrollLeft = left;
+    requestAnimationFrame(() => {
+      el.style.scrollSnapType = prevSnap;
+      el.style.scrollBehavior = prevBehavior;
+    });
+  };
+
+  // Posisi awal: kartu pertama di set tengah (diatur sebelum halaman tampil, tidak terlihat bergeser)
+  const centerCarousel = () => {
+    const el = scrollRef.current;
+    const setW = getSetWidth();
+    if (!el || setW <= 0) return;
+    jumpTo(setW * CAROUSEL_MID);
+    carouselWidth.current = el.clientWidth;
+  };
+
+  // Samakan posisi ke set tengah. Isi layar identik, jadi tidak terlihat oleh pengguna
+  const normalizeCarousel = () => {
+    const el = scrollRef.current;
+    const setW = getSetWidth();
+    if (!el || setW <= 0) return;
+    const base = setW * CAROUSEL_MID;
+    const offset = (((el.scrollLeft - base) % setW) + setW) % setW;
+    const target = base + offset;
+    if (Math.abs(target - el.scrollLeft) > 1) jumpTo(target);
+  };
+
+  const handleCarouselScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    // Aman: kalau sudah mentok di ujung, langsung samakan posisi
+    if (el.scrollLeft <= 1 || el.scrollLeft >= max - 1) {
+      normalizeCarousel();
+      return;
+    }
+    // Normal: tunggu geseran berhenti dulu agar tidak memutus animasi / momentum
+    if (wrapTimer.current) clearTimeout(wrapTimer.current);
+    wrapTimer.current = setTimeout(normalizeCarousel, 120);
+  };
+
+  useIsoLayoutEffect(() => {
+    if (selectedCategory) return;
+    centerCarousel();
+    const onResize = () => {
+      const el = scrollRef.current;
+      if (el && el.clientWidth !== carouselWidth.current) centerCarousel();
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      if (wrapTimer.current) clearTimeout(wrapTimer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory]);
 
   // Scroll ke atas hanya saat tampilan benar-benar berpindah (kategori -> sub -> paket -> form),
@@ -864,7 +941,7 @@ export default function LandingPage() {
               <p className="text-neutral-500 text-sm mt-1">Geser ke samping untuk melihat pilihan kategori lainnya ➔</p>
             </div>
 
-            {/* Horizontal scrolling manual yang stabil (tidak bergeser otomatis) */}
+            {/* Carousel manual tanpa batas (tidak bergeser otomatis) */}
             <div className="relative max-w-5xl mx-auto">
               <button 
                 onClick={() => scrollCard('left')}
@@ -884,50 +961,58 @@ export default function LandingPage() {
 
               <div 
                 ref={scrollRef}
+                onScroll={handleCarouselScroll}
                 className="flex overflow-x-auto no-scrollbar gap-6 py-6 px-4 snap-x snap-proximity scroll-px-4"
               >
-                {categories.map((cat) => (
-                  <div
-                    key={cat.id}
-                    className="snap-start flex-shrink-0 w-[85%] md:w-[380px] rounded-3xl overflow-hidden bg-neutral-900 text-white shadow-xl flex flex-col justify-end p-6 md:p-8 relative"
-                    style={{ minHeight: '450px' }}
-                  >
-                    <div className="absolute inset-0 z-0">
-                      <img
-                        src={cat.image}
-                        alt={cat.title}
-                        loading="lazy"
-                        decoding="async"
-                        className="w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-transparent" />
-                    </div>
-
-                    <div className="relative z-10 mt-auto flex flex-col justify-end">
-                      <div className="flex items-end justify-between gap-4">
-                        <div>
-                          <h3 className="font-serif text-2xl md:text-3xl font-bold text-white mb-1 drop-shadow-md">
-                            {cat.title}
-                          </h3>
-                          <p className="text-neutral-300 text-sm font-light drop-shadow">
-                            {cat.tagline}
-                          </p>
+                {Array.from({ length: CAROUSEL_COPIES }).flatMap((_, copyIdx) =>
+                  categories.map((cat) => {
+                    const isMain = copyIdx === CAROUSEL_MID;
+                    return (
+                      <div
+                        key={`${cat.id}-${copyIdx}`}
+                        aria-hidden={!isMain}
+                        className="snap-start flex-shrink-0 w-[85%] md:w-[380px] rounded-3xl overflow-hidden bg-neutral-900 text-white shadow-xl flex flex-col justify-end p-6 md:p-8 relative"
+                        style={{ minHeight: '450px' }}
+                      >
+                        <div className="absolute inset-0 z-0">
+                          <img
+                            src={cat.image}
+                            alt={isMain ? cat.title : ''}
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-transparent" />
                         </div>
-                        <button
-                          onClick={() => {
-                            setSelectedCategory(cat);
-                            setSelectedSub(null);
-                            setSelectedPackageForBooking(null);
-                          }}
-                          className="bg-amber-500 hover:bg-amber-400 text-neutral-950 font-semibold py-2 px-4 rounded-xl text-xs flex items-center gap-1 shadow-lg transition-all flex-shrink-0"
-                        >
-                          <span>Pilih Kategori</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
+
+                        <div className="relative z-10 mt-auto flex flex-col justify-end">
+                          <div className="flex items-end justify-between gap-4">
+                            <div>
+                              <h3 className="font-serif text-2xl md:text-3xl font-bold text-white mb-1 drop-shadow-md">
+                                {cat.title}
+                              </h3>
+                              <p className="text-neutral-300 text-sm font-light drop-shadow">
+                                {cat.tagline}
+                              </p>
+                            </div>
+                            <button
+                              tabIndex={isMain ? 0 : -1}
+                              onClick={() => {
+                                setSelectedCategory(cat);
+                                setSelectedSub(null);
+                                setSelectedPackageForBooking(null);
+                              }}
+                              className="bg-amber-500 hover:bg-amber-400 text-neutral-950 font-semibold py-2 px-4 rounded-xl text-xs flex items-center gap-1 shadow-lg transition-all flex-shrink-0"
+                            >
+                              <span>Pilih Kategori</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                    );
+                  })
+                )}
               </div>
             </div>
 
