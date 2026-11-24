@@ -1,7 +1,7 @@
 'use client';
 import { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import type { FormEvent, ReactNode } from 'react';
-import { MessageCircle, ArrowLeft, Check, Calendar, Clock, MapPin, HelpCircle, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, Sparkles, User } from 'lucide-react';
+import { MessageCircle, ArrowLeft, Check, Calendar, Clock, MapPin, ChevronDown, ChevronUp, ChevronRight, ChevronLeft, Sparkles, User, Menu, X } from 'lucide-react';
 
 /* ============================================================
    KONSTANTA & TIPE
@@ -80,9 +80,17 @@ const availableTimeSlots = [
 
 const navLinks = [
   { id: 'kategori', label: 'Kategori' },
+  { id: 'layanan', label: 'Layanan' },
+  { id: 'tentang', label: 'Tentang' },
   { id: 'cara-booking', label: 'Cara booking' },
-  { id: 'area-layanan', label: 'Area layanan' },
-  { id: 'faq', label: 'FAQ' }
+  { id: 'faq', label: 'FAQ' },
+  { id: 'kontak', label: 'Kontak' }
+];
+
+const aboutPoints = [
+  'Harga transparan, tanpa biaya tersembunyi.',
+  'Semua paket dapat file original lewat Google Drive.',
+  'Reschedule gratis 1x kalau cuaca kurang bersahabat.'
 ];
 
 const bookingSteps = [
@@ -313,6 +321,9 @@ const faqsData = [
   }
 ];
 
+// Daftar datar semua sub-kategori untuk grid Layanan
+const allServices = categories.flatMap(cat => cat.subcategories.map(sub => ({ cat, sub })));
+
 /* ============================================================
    FUNGSI BANTU
    ============================================================ */
@@ -359,6 +370,17 @@ const inputClass = (hasError?: boolean) =>
 /* ============================================================
    KOMPONEN KECIL
    ============================================================ */
+
+function SectionTitle({ label, title, desc }: { label: string; title: string; desc?: string }) {
+  return (
+    <div className="text-center mb-10 md:mb-12">
+      <p className="text-xs font-semibold tracking-[0.2em] uppercase text-amber-700">{label}</p>
+      <h2 className="font-serif text-2xl md:text-4xl font-bold text-neutral-900 mt-2">{title}</h2>
+      <div className="w-14 h-1 bg-amber-400 rounded-full mx-auto mt-4" />
+      {desc && <p className="text-neutral-500 text-sm md:text-base mt-4 max-w-2xl mx-auto">{desc}</p>}
+    </div>
+  );
+}
 
 function Field({
   label,
@@ -541,6 +563,8 @@ export default function LandingPage() {
   // Lain-lain
   const [minDate, setMinDate] = useState('');
   const [openFaqIndex, setOpenFaqIndex] = useState<string | null>(null);
+  const [serviceFilter, setServiceFilter] = useState<string>('all');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [logoError, setLogoError] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -709,7 +733,14 @@ export default function LandingPage() {
     setSelectedPackageForBooking(null);
   };
 
+  const openSub = (cat: Category, sub: SubCategory) => {
+    setSelectedCategory(cat);
+    setSelectedSub(sub);
+    setSelectedPackageForBooking(null);
+  };
+
   const goHome = () => {
+    setIsMenuOpen(false);
     if (selectedCategory) {
       resetViews();
     } else {
@@ -718,6 +749,7 @@ export default function LandingPage() {
   };
 
   const goToSection = (id: string) => {
+    setIsMenuOpen(false);
     const onHome = !selectedCategory;
     if (!onHome) resetViews();
     window.setTimeout(
@@ -734,6 +766,7 @@ export default function LandingPage() {
   const wizardPkg = wizardPkgIdx !== null ? activeWizardSub.packages[wizardPkgIdx] : null;
 
   const handleOpenWizard = () => {
+    setIsMenuOpen(false);
     setIsWizardOpen(true);
     setWizardStep(1);
     setWizardErrors({});
@@ -814,6 +847,8 @@ export default function LandingPage() {
   };
 
   const wizardStepLabels = ['Kategori', 'Paket', 'Jadwal & lokasi'];
+  const filteredServices = allServices.filter(s => serviceFilter === 'all' || s.cat.id === serviceFilter);
+  const waConsultUrl = `https://wa.me/${WA_NUMBER}?text=Halo%20Kak,%20saya%20mau%20konsultasi%20dulu%20tentang%20jasa%20fotografinya.`;
 
   return (
     <main className="min-h-screen bg-white text-neutral-900 font-sans selection:bg-amber-200">
@@ -864,26 +899,37 @@ export default function LandingPage() {
 
       {/* Floating WhatsApp CTA */}
       <a
-        href={`https://wa.me/${WA_NUMBER}?text=Halo%20Kak,%20saya%20mau%20konsultasi%20dulu%20tentang%20jasa%20fotografinya.`}
+        href={waConsultUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-emerald-600 text-white px-5 py-3.5 rounded-full shadow-2xl hover:bg-emerald-700 transition-all duration-300 hover:scale-105 font-medium text-sm md:text-base border border-emerald-500/30"
+        aria-label="Konsultasi dulu via WhatsApp"
+        className="fixed bottom-5 right-4 md:bottom-6 md:right-6 z-50 flex items-center gap-2.5 bg-emerald-600 text-white px-4 py-3 md:px-5 md:py-3.5 rounded-full shadow-2xl hover:bg-emerald-700 transition-all duration-300 hover:scale-105 font-medium text-sm md:text-base border border-emerald-500/30"
       >
         <MessageCircle className="w-6 h-6 fill-white text-emerald-600" />
-        <span className="tracking-wide">konsultasi dulu</span>
+        <span className="hidden sm:inline tracking-wide">konsultasi dulu</span>
       </a>
 
       {/* Navbar */}
       <nav
         aria-label="Navigasi utama"
-        className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-neutral-100"
+        className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-neutral-100"
       >
-        <div className="max-w-6xl mx-auto px-4 md:px-6 h-14 flex items-center justify-between gap-4">
-          <button onClick={goHome} className="font-serif font-bold text-lg text-neutral-900 hover:text-amber-700 transition-colors">
-            Potoin Kamu
+        <div className="max-w-6xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between gap-4">
+          <button onClick={goHome} aria-label="Potoin Kamu, ke beranda" className="flex items-center flex-shrink-0">
+            {logoError ? (
+              <span className="font-serif font-bold text-xl text-neutral-900">Potoin Kamu</span>
+            ) : (
+              <img
+                ref={logoRef}
+                src="/logo.png"
+                alt="Potoin Kamu"
+                className="h-8 md:h-10 w-auto max-w-[160px] md:max-w-[200px] object-contain"
+                onError={() => setLogoError(true)}
+              />
+            )}
           </button>
 
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden lg:flex items-center gap-7">
             {navLinks.map(link => (
               <button
                 key={link.id}
@@ -895,229 +941,367 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <button
-            onClick={handleOpenWizard}
-            className="bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white text-xs md:text-sm font-semibold px-4 py-2 rounded-full transition-all"
-          >
-            Potoin aku
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleOpenWizard}
+              className="bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white text-xs md:text-sm font-semibold px-4 py-2 rounded-full transition-all"
+            >
+              Potoin aku
+            </button>
+            <button
+              onClick={() => setIsMenuOpen(o => !o)}
+              aria-label={isMenuOpen ? 'Tutup menu' : 'Buka menu'}
+              aria-expanded={isMenuOpen}
+              className="lg:hidden w-10 h-10 rounded-full flex items-center justify-center text-neutral-800 hover:bg-neutral-100 transition-colors"
+            >
+              {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
+
+        {isMenuOpen && (
+          <div className="lg:hidden border-t border-neutral-100 bg-white">
+            <ul className="max-w-6xl mx-auto px-4 py-2">
+              {navLinks.map(link => (
+                <li key={link.id}>
+                  <button
+                    onClick={() => goToSection(link.id)}
+                    className="w-full text-left py-3 text-sm font-medium text-neutral-700 hover:text-amber-700 border-b border-neutral-50 last:border-0"
+                  >
+                    {link.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </nav>
 
-      {/* Header & Hero */}
-      <header className="max-w-5xl mx-auto px-6 pt-8 pb-2 text-center">
-        <div className="flex justify-center mb-5">
-          {logoError ? (
-            <span className="font-serif text-5xl md:text-6xl font-bold text-neutral-900">Potoin Kamu</span>
-          ) : (
-            <div className="relative h-36 w-72 md:h-52 md:w-[28rem]">
-              <img
-                ref={logoRef}
-                src="/logo.png"
-                alt="Potoin Kamu Logo"
-                className="object-contain h-full w-full"
-                onError={() => setLogoError(true)}
-              />
-            </div>
-          )}
-        </div>
+      {!selectedCategory ? (
+        <>
+          {/* Hero */}
+          <section id="beranda" className="relative isolate overflow-hidden bg-neutral-900 text-white">
+            <img
+              src={categories[0].image}
+              alt=""
+              className="absolute inset-0 -z-10 h-full w-full object-cover opacity-50"
+            />
+            <div className="absolute inset-0 -z-10 bg-gradient-to-b from-neutral-950/70 via-neutral-950/50 to-neutral-950/85" />
 
-        <h1 className="font-serif text-xl md:text-2xl font-semibold tracking-tight text-neutral-900 mb-2 leading-tight">
-          Your Story, Captured.
-        </h1>
-        <p className="text-neutral-600 text-sm md:text-base max-w-2xl mx-auto font-light leading-relaxed">
-          Jasa Fotografi Profesional untuk Segala Kebutuhanmu.
-        </p>
-      </header>
+            <div className="max-w-4xl mx-auto px-6 py-20 md:py-32 text-center">
+              <p className="text-xs md:text-sm font-semibold tracking-[0.25em] uppercase text-amber-400">
+                Jasa Fotografi · Malang dan sekitarnya
+              </p>
+              <h1 className="font-serif text-4xl md:text-6xl font-bold tracking-tight mt-4 leading-tight">
+                Your Story, Captured.
+              </h1>
+              <p className="text-neutral-200 text-base md:text-lg font-light leading-relaxed max-w-2xl mx-auto mt-5">
+                Jasa fotografi profesional untuk segala kebutuhanmu: wisuda, prewed, keluarga, acara, sampai foto produk dan menu usahamu.
+              </p>
 
-      {/* Main Section */}
-      <section className="max-w-6xl mx-auto px-4 pb-20">
-        {!selectedCategory ? (
-          <>
-            <div id="kategori" className="scroll-mt-20 text-center mt-6 mb-6">
-              <h2 className="font-serif text-2xl md:text-3xl font-bold text-neutral-900">
-                Kategori Foto
-              </h2>
-              <p className="text-neutral-500 text-sm mt-1">Geser ke samping untuk melihat pilihan kategori lainnya ➔</p>
-            </div>
-
-            {/* Carousel manual tanpa batas (tidak bergeser otomatis) */}
-            <div className="relative max-w-5xl mx-auto">
-              <button 
-                onClick={() => scrollCard('left')}
-                aria-label="Geser ke kiri"
-                className="hidden md:flex absolute -left-5 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white shadow-xl rounded-full items-center justify-center text-neutral-800 hover:bg-amber-100 transition-all border border-neutral-200"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-
-              <button 
-                onClick={() => scrollCard('right')}
-                aria-label="Geser ke kanan"
-                className="hidden md:flex absolute -right-5 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white shadow-xl rounded-full items-center justify-center text-neutral-800 hover:bg-amber-100 transition-all border border-neutral-200"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </button>
-
-              <div 
-                ref={scrollRef}
-                onScroll={handleCarouselScroll}
-                className="flex overflow-x-auto no-scrollbar gap-6 py-6 px-4 snap-x snap-proximity scroll-px-4"
-              >
-                {Array.from({ length: CAROUSEL_COPIES }).flatMap((_, copyIdx) =>
-                  categories.map((cat) => {
-                    const isMain = copyIdx === CAROUSEL_MID;
-                    return (
-                      <div
-                        key={`${cat.id}-${copyIdx}`}
-                        aria-hidden={!isMain}
-                        className="snap-start flex-shrink-0 w-[85%] md:w-[380px] rounded-3xl overflow-hidden bg-neutral-900 text-white shadow-xl flex flex-col justify-end p-6 md:p-8 relative"
-                        style={{ minHeight: '450px' }}
-                      >
-                        <div className="absolute inset-0 z-0">
-                          <img
-                            src={cat.image}
-                            alt={isMain ? cat.title : ''}
-                            loading="lazy"
-                            decoding="async"
-                            className="w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-transparent" />
-                        </div>
-
-                        <div className="relative z-10 mt-auto flex flex-col justify-end">
-                          <div className="flex items-end justify-between gap-4">
-                            <div>
-                              <h3 className="font-serif text-2xl md:text-3xl font-bold text-white mb-1 drop-shadow-md">
-                                {cat.title}
-                              </h3>
-                              <p className="text-neutral-300 text-sm font-light drop-shadow">
-                                {cat.tagline}
-                              </p>
-                            </div>
-                            <button
-                              tabIndex={isMain ? 0 : -1}
-                              onClick={() => {
-                                setSelectedCategory(cat);
-                                setSelectedSub(null);
-                                setSelectedPackageForBooking(null);
-                              }}
-                              className="bg-amber-500 hover:bg-amber-400 text-neutral-950 font-semibold py-2 px-4 rounded-xl text-xs flex items-center gap-1 shadow-lg transition-all flex-shrink-0"
-                            >
-                              <span>Pilih Kategori</span>
-                              <ChevronRight className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            {/* Tombol aksi dan keunggulan, di bawah kategori */}
-            <div className="text-center mt-8 mb-16">
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-8">
                 <button
                   onClick={() => goToSection('kategori')}
-                  className="w-full sm:w-auto bg-white hover:bg-amber-50 text-neutral-900 font-semibold px-7 py-3.5 rounded-2xl border border-neutral-300 hover:border-amber-400 transition-all text-sm"
+                  className="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-neutral-950 font-semibold px-7 py-3.5 rounded-full transition-all text-sm"
                 >
                   Lihat paket dan harga
                 </button>
                 <button
                   onClick={handleOpenWizard}
-                  className="w-full sm:w-auto bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white font-semibold px-7 py-3.5 rounded-2xl shadow-lg transition-all text-sm animate-scale-pulse"
+                  className="w-full sm:w-auto bg-white/10 hover:bg-white/20 border border-white/40 text-white font-semibold px-7 py-3.5 rounded-full backdrop-blur transition-all text-sm"
                 >
                   Hitung pesananku
                 </button>
               </div>
 
-              <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-6 text-sm text-neutral-600">
+              <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mt-8 text-sm text-neutral-200">
                 <li className="flex items-center gap-1.5">
-                  <Check className="w-4 h-4 text-emerald-600" />
+                  <Check className="w-4 h-4 text-emerald-400" />
                   DP 50% untuk kunci jadwal
                 </li>
                 <li className="flex items-center gap-1.5">
-                  <Check className="w-4 h-4 text-emerald-600" />
-                  Reschedule gratis 1x kalau cuaca buruk
+                  <Check className="w-4 h-4 text-emerald-400" />
+                  File original via Google Drive
                 </li>
                 <li className="flex items-center gap-1.5">
-                  <Check className="w-4 h-4 text-emerald-600" />
+                  <Check className="w-4 h-4 text-emerald-400" />
                   Melayani Malang, Batu, dan Surabaya
                 </li>
               </ul>
             </div>
+          </section>
 
-            {/* Cara booking */}
-            <div id="cara-booking" className="scroll-mt-20 pt-12 border-t border-neutral-100 max-w-4xl mx-auto">
-              <div className="text-center mb-10">
-                <h3 className="font-serif text-2xl md:text-3xl font-bold text-neutral-900">
-                  Cara booking di Potoin Kamu
-                </h3>
-                <p className="text-neutral-500 text-sm mt-1">Empat langkah, dari pilih paket sampai foto jadi.</p>
+          {/* Kategori Foto: carousel manual tanpa batas (tidak bergeser otomatis) */}
+          <section id="kategori" className="scroll-mt-16 py-16 md:py-20">
+            <div className="max-w-6xl mx-auto px-4">
+              <SectionTitle
+                label="Kategori Foto"
+                title="Pilih jenis foto yang kamu butuhkan"
+                desc="Geser ke samping untuk melihat pilihan kategori lainnya ➔"
+              />
+
+              <div className="relative max-w-5xl mx-auto">
+                <button 
+                  onClick={() => scrollCard('left')}
+                  aria-label="Geser ke kiri"
+                  className="hidden md:flex absolute -left-5 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white shadow-xl rounded-full items-center justify-center text-neutral-800 hover:bg-amber-100 transition-all border border-neutral-200"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+
+                <button 
+                  onClick={() => scrollCard('right')}
+                  aria-label="Geser ke kanan"
+                  className="hidden md:flex absolute -right-5 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white shadow-xl rounded-full items-center justify-center text-neutral-800 hover:bg-amber-100 transition-all border border-neutral-200"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+
+                <div 
+                  ref={scrollRef}
+                  onScroll={handleCarouselScroll}
+                  className="flex overflow-x-auto no-scrollbar gap-6 py-6 px-4 snap-x snap-proximity scroll-px-4"
+                >
+                  {Array.from({ length: CAROUSEL_COPIES }).flatMap((_, copyIdx) =>
+                    categories.map((cat) => {
+                      const isMain = copyIdx === CAROUSEL_MID;
+                      return (
+                        <div
+                          key={`${cat.id}-${copyIdx}`}
+                          aria-hidden={!isMain}
+                          className="snap-start flex-shrink-0 w-[85%] md:w-[380px] rounded-3xl overflow-hidden bg-neutral-900 text-white shadow-xl flex flex-col justify-end p-6 md:p-8 relative"
+                          style={{ minHeight: '450px' }}
+                        >
+                          <div className="absolute inset-0 z-0">
+                            <img
+                              src={cat.image}
+                              alt={isMain ? cat.title : ''}
+                              loading="lazy"
+                              decoding="async"
+                              className="w-full h-full object-cover opacity-75 hover:scale-105 transition-transform duration-700"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/40 to-transparent" />
+                          </div>
+
+                          <div className="relative z-10 mt-auto flex flex-col justify-end">
+                            <div className="flex items-end justify-between gap-4">
+                              <div>
+                                <h3 className="font-serif text-2xl md:text-3xl font-bold text-white mb-1 drop-shadow-md">
+                                  {cat.title}
+                                </h3>
+                                <p className="text-neutral-300 text-sm font-light drop-shadow">
+                                  {cat.tagline}
+                                </p>
+                              </div>
+                              <button
+                                tabIndex={isMain ? 0 : -1}
+                                onClick={() => {
+                                  setSelectedCategory(cat);
+                                  setSelectedSub(null);
+                                  setSelectedPackageForBooking(null);
+                                }}
+                                className="bg-amber-500 hover:bg-amber-400 text-neutral-950 font-semibold py-2 px-4 rounded-xl text-xs flex items-center gap-1 shadow-lg transition-all flex-shrink-0"
+                              >
+                                <span>Pilih Kategori</span>
+                                <ChevronRight className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               </div>
+            </div>
+          </section>
+
+          {/* Layanan: semua sub-kategori dengan filter */}
+          <section id="layanan" className="scroll-mt-16 py-16 md:py-20 bg-neutral-50">
+            <div className="max-w-6xl mx-auto px-4">
+              <SectionTitle
+                label="Layanan"
+                title="Semua layanan Potoin Kamu"
+                desc="Pilih layanan untuk melihat detail paket dan harganya."
+              />
+
+              <div className="flex flex-wrap justify-center gap-2 mb-8" role="group" aria-label="Filter layanan">
+                {[{ id: 'all', title: 'Semua' }, ...categories.map(c => ({ id: c.id, title: c.title }))].map(f => {
+                  const active = serviceFilter === f.id;
+                  return (
+                    <button
+                      key={f.id}
+                      onClick={() => setServiceFilter(f.id)}
+                      aria-pressed={active}
+                      className={`text-sm px-4 py-2 rounded-full border transition-colors ${
+                        active
+                          ? 'bg-neutral-900 text-white border-neutral-900 font-semibold'
+                          : 'bg-white text-neutral-700 border-neutral-200 hover:border-amber-400'
+                      }`}
+                    >
+                      {f.title}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredServices.map(({ cat, sub }) => (
+                  <article
+                    key={sub.id}
+                    className="group bg-white rounded-2xl overflow-hidden border border-neutral-100 shadow-sm hover:shadow-xl hover:border-amber-300 transition-all duration-300 flex flex-col"
+                  >
+                    <div className="relative h-48 overflow-hidden bg-neutral-100">
+                      <img
+                        src={sub.image}
+                        alt={sub.name}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
+                      <span className="absolute top-3 left-3 bg-white/90 text-neutral-800 text-[11px] font-semibold px-2.5 py-1 rounded-full">
+                        {cat.title}
+                      </span>
+                    </div>
+                    <div className="p-5 flex flex-col flex-1">
+                      <h3 className="font-serif text-lg font-bold text-neutral-900 leading-snug">{sub.name}</h3>
+                      <p className="text-neutral-600 text-sm mt-1.5 flex-1">{sub.desc}</p>
+                      <div className="flex items-center justify-between gap-3 mt-4">
+                        <span className="text-xs text-neutral-500">
+                          Mulai dari <strong className="text-amber-800 font-mono">{sub.packages[0].price}</strong>
+                        </span>
+                        <button
+                          onClick={() => openSub(cat, sub)}
+                          className="bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white text-xs font-semibold px-4 py-2 rounded-full transition-all flex items-center gap-1 flex-shrink-0"
+                        >
+                          Lihat paket
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* Tentang Kami */}
+          <section id="tentang" className="scroll-mt-16 py-16 md:py-20">
+            <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+              <div>
+                <p className="text-xs font-semibold tracking-[0.2em] uppercase text-amber-700">Tentang Kami</p>
+                <h2 className="font-serif text-2xl md:text-4xl font-bold text-neutral-900 mt-2 leading-tight">
+                  Fotografi yang santai, hasil yang niat
+                </h2>
+                <div className="w-14 h-1 bg-amber-400 rounded-full mt-4" />
+                <p className="text-neutral-600 leading-relaxed mt-5">
+                  Potoin Kamu adalah jasa fotografi untuk wilayah Malang dan sekitarnya yang ramah untuk mahasiswa dan UMKM. Dari wisuda, prewed, dan foto keluarga, sampai liputan acara serta foto produk untuk jualanmu. Kami ngobrol dulu biar kamu rileks, baru memotret.
+                </p>
+                <ul className="space-y-3 mt-6">
+                  {aboutPoints.map(point => (
+                    <li key={point} className="flex items-start gap-3 text-neutral-700">
+                      <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center">
+                        <Check className="w-3.5 h-3.5 text-emerald-700" />
+                      </span>
+                      <span className="text-sm md:text-base">{point}</span>
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  onClick={handleOpenWizard}
+                  className="mt-8 bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white font-semibold px-7 py-3.5 rounded-full transition-all text-sm"
+                >
+                  Hitung pesananku
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <img
+                  src={categories[0].subcategories[1].image}
+                  alt="Foto prewed"
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-64 md:h-80 object-cover rounded-2xl shadow-lg"
+                />
+                <img
+                  src={categories[0].subcategories[0].image}
+                  alt="Foto wisuda"
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-64 md:h-80 object-cover rounded-2xl shadow-lg mt-8"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Banner reservasi */}
+          <section className="relative isolate overflow-hidden bg-neutral-900 text-white">
+            <img
+              src={categories[1].image}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="absolute inset-0 -z-10 h-full w-full object-cover opacity-40"
+            />
+            <div className="absolute inset-0 -z-10 bg-neutral-950/60" />
+            <div className="max-w-3xl mx-auto px-6 py-16 md:py-20 text-center">
+              <h2 className="font-serif text-2xl md:text-4xl font-bold leading-tight">Reservasi atau konsultasi dulu?</h2>
+              <p className="text-neutral-200 mt-4 leading-relaxed">
+                Ceritain aja foto apa yang kamu butuhkan, kami bantu pilihkan paket dan jadwalnya.
+              </p>
+              <a
+                href={waConsultUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 mt-7 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-7 py-3.5 rounded-full transition-all text-sm"
+              >
+                <MessageCircle className="w-5 h-5 fill-white text-emerald-600" />
+                Reservasi / Konsultasi via WhatsApp
+              </a>
+            </div>
+          </section>
+
+          {/* Cara booking */}
+          <section id="cara-booking" className="scroll-mt-16 py-16 md:py-20 bg-neutral-50">
+            <div className="max-w-4xl mx-auto px-4">
+              <SectionTitle
+                label="Cara Booking"
+                title="Empat langkah, dari pilih paket sampai foto jadi"
+              />
 
               <ol className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-8">
                 {bookingSteps.map((step, i) => (
                   <li key={step.title} className="flex gap-4">
                     <span
                       aria-hidden="true"
-                      className="flex-shrink-0 w-9 h-9 rounded-full bg-amber-100 text-amber-900 font-serif font-bold flex items-center justify-center"
+                      className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 text-amber-900 font-serif font-bold flex items-center justify-center"
                     >
                       {i + 1}
                     </span>
                     <div>
-                      <h4 className="font-serif font-bold text-neutral-900 text-lg leading-snug">{step.title}</h4>
+                      <h3 className="font-serif font-bold text-neutral-900 text-lg leading-snug">{step.title}</h3>
                       <p className="text-neutral-600 text-sm leading-relaxed mt-1">{step.desc}</p>
                     </div>
                   </li>
                 ))}
               </ol>
             </div>
+          </section>
 
-            {/* Area layanan */}
-            <div id="area-layanan" className="scroll-mt-20 mt-20 pt-12 border-t border-neutral-100 max-w-4xl mx-auto">
-              <div className="text-center mb-10">
-                <h3 className="font-serif text-2xl md:text-3xl font-bold text-neutral-900">
-                  Area layanan
-                </h3>
-                <p className="text-neutral-500 text-sm mt-1">
-                  Sesi foto bisa di outdoor, home visit ke rumahmu, atau di studio partner.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {serviceAreas.map(area => (
-                  <div key={area.name} className="border-l-4 border-amber-400 pl-4">
-                    <h4 className="font-serif font-bold text-neutral-900 text-lg leading-snug flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                      {area.name}
-                    </h4>
-                    <p className="text-neutral-600 text-sm leading-relaxed mt-1.5">{area.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Complete FAQ Section with Accordion */}
-            <div id="faq" className="scroll-mt-20 mt-20 pt-12 border-t border-neutral-100 max-w-3xl mx-auto">
-              <div className="text-center mb-10">
-                <div className="inline-flex items-center gap-2 text-amber-700 bg-amber-50 px-3.5 py-1 rounded-full text-xs font-semibold mb-2">
-                  <HelpCircle className="w-3.5 h-3.5" />
-                  FAQ “POTOIN KAMU”
-                </div>
-                <h3 className="font-serif text-2xl md:text-3xl font-bold text-neutral-900">
-                  Yang sering ditanyain sebelum booking
-                </h3>
-              </div>
+          {/* FAQ */}
+          <section id="faq" className="scroll-mt-16 py-16 md:py-20">
+            <div className="max-w-3xl mx-auto px-4">
+              <SectionTitle
+                label="FAQ Potoin Kamu"
+                title="Yang sering ditanyain sebelum booking"
+              />
 
               <div className="space-y-8">
                 {faqsData.map((group, groupIdx) => (
                   <div key={groupIdx} className="space-y-3">
-                    <h4 className="font-serif font-bold text-amber-800 text-lg border-b border-amber-200/50 pb-2">
+                    <h3 className="font-serif font-bold text-amber-800 text-lg border-b border-amber-200/50 pb-2">
                       {group.category}
-                    </h4>
+                    </h3>
                     <div className="space-y-3">
                       {group.items.map((item, itemIdx) => {
                         const uniqueKey = `${groupIdx}-${itemIdx}`;
@@ -1148,271 +1332,336 @@ export default function LandingPage() {
                 ))}
               </div>
             </div>
-          </>
-        ) : !selectedSub ? (
-          /* Sub-Category View */
-          <div className="max-w-3xl mx-auto bg-amber-50/40 border border-amber-200/60 rounded-3xl p-6 md:p-10 shadow-xl">
-            <button
-              onClick={resetViews}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-amber-800 hover:text-amber-950 mb-6 bg-white px-4 py-2 rounded-full shadow-sm border border-amber-200/60 transition-all hover:scale-105"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Kembali ke Beranda & Kategori
-            </button>
+          </section>
 
-            <div className="border-b border-amber-200/60 pb-6 mb-8">
-              <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-3 py-1 rounded-full uppercase tracking-wider">
-                Sub-Kategori & Portofolio Paket
-              </span>
-              <h2 className="font-serif text-3xl md:text-4xl font-bold text-neutral-900 mt-3 mb-2">
-                {selectedCategory.title}
-              </h2>
-              <p className="text-neutral-600 text-base">{selectedCategory.tagline}</p>
-            </div>
+          {/* Kontak */}
+          <section id="kontak" className="scroll-mt-16 py-16 md:py-20 bg-neutral-50">
+            <div className="max-w-5xl mx-auto px-4">
+              <SectionTitle
+                label="Kontak"
+                title="Hubungi Potoin Kamu"
+                desc="Cara tercepat adalah lewat WhatsApp. Sebutkan foto apa yang kamu butuhkan, kami bantu dari sana."
+              />
 
-            <div className="space-y-6">
-              {selectedCategory.subcategories.map((sub) => (
-                <div
-                  key={sub.id}
-                  className="bg-white rounded-2xl p-5 shadow-sm border border-neutral-100 hover:border-amber-300 transition-all duration-300 flex flex-col md:flex-row items-center gap-6"
-                >
-                  <div className="relative w-full md:w-44 h-40 rounded-xl overflow-hidden flex-shrink-0 bg-neutral-100 shadow-md">
-                    <img
-                      src={sub.image}
-                      alt={sub.name}
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-
-                  <div className="flex-1 w-full">
-                    <h4 className="font-serif text-xl font-bold text-neutral-900 mb-1">{sub.name}</h4>
-                    <p className="text-neutral-600 text-sm mb-4">{sub.desc}</p>
-                    <button
-                      onClick={() => {
-                        setSelectedSub(sub);
-                        setSelectedPackageForBooking(null);
-                      }}
-                      className="w-full md:w-auto bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 text-sm flex items-center justify-center gap-2 shadow-md"
-                    >
-                      <Check className="w-4 h-4" />
-                      <span>Pilih Sub-Kategori Ini</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : !selectedPackageForBooking ? (
-          /* Detailed 4 Cards View */
-          <div className="max-w-4xl mx-auto bg-amber-50/40 border border-amber-200/60 rounded-3xl p-6 md:p-10 shadow-xl">
-            <button
-              onClick={() => setSelectedSub(null)}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-amber-800 hover:text-amber-950 mb-6 bg-white px-4 py-2 rounded-full shadow-sm border border-amber-200/60 transition-all hover:scale-105"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Kembali ke Sub-Kategori
-            </button>
-
-            <div className="border-b border-amber-200/60 pb-6 mb-8">
-              <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-3 py-1 rounded-full uppercase tracking-wider">
-                Pilihan Paket: {selectedSub.name}
-              </span>
-              <h2 className="font-serif text-2xl md:text-3xl font-bold text-neutral-900 mt-2 mb-1">
-                Pilih Paket yang Sesuai Budget & Keinginanmu
-              </h2>
-              <p className="text-neutral-600 text-sm">Setiap paket sudah dirancang transparan tanpa biaya tersembunyi.</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {selectedSub.packages.map((pkg, i) => {
-                const isCustom = isCustomPackage(pkg);
-                return (
-                  <div 
-                    key={i}
-                    className={`rounded-3xl p-6 border shadow-md flex flex-col justify-between transition-all ${
-                      isCustom 
-                        ? 'bg-amber-50 border-amber-300 md:col-span-2' 
-                        : 'bg-white border-neutral-200 hover:border-amber-400'
-                    }`}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white rounded-2xl border border-neutral-100 shadow-sm p-6">
+                  <h3 className="font-serif font-bold text-neutral-900 text-lg flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4 text-emerald-600" />
+                    WhatsApp
+                  </h3>
+                  <p className="text-neutral-600 text-sm mt-2 leading-relaxed">
+                    Tanya paket, cek jadwal kosong, atau diskusi konsep custom.
+                  </p>
+                  <a
+                    href={waConsultUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 mt-4 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-all"
                   >
-                    <div>
-                      <div className="flex justify-between items-start mb-3 gap-3">
-                        <h3 className="font-serif text-xl font-bold text-neutral-900">{pkg.name}</h3>
-                        <span className="bg-amber-100 text-amber-900 font-mono font-bold text-sm px-3 py-1 rounded-full flex-shrink-0">
-                          {pkg.price}
-                        </span>
-                      </div>
-                      
-                      {!isCustom ? (
-                        <div className="space-y-2 mb-6 text-sm text-neutral-700">
-                          <p className="font-medium text-neutral-900">📦 {pkg.spec}</p>
-                          <p className="text-emerald-700 font-medium">🎁 Bonus: {pkg.bonus}</p>
-                          <p className="text-neutral-500 italic text-xs">💡 Cocok buat: {pkg.ideal}</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-2 mb-6 text-sm text-neutral-700">
-                          <p className="font-serif font-bold text-amber-900 text-base">Punya ide sendiri?</p>
-                          <p className="text-neutral-700">Budget & konsep bisa kita sesuaikan. Ceritain aja mau kamu dipotoin kayak gimana!</p>
-                        </div>
-                      )}
+                    Chat sekarang
+                  </a>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-neutral-100 shadow-sm p-6">
+                  <h3 className="font-serif font-bold text-neutral-900 text-lg flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-amber-600" />
+                    Area layanan
+                  </h3>
+                  <ul className="mt-3 space-y-3">
+                    {serviceAreas.map(area => (
+                      <li key={area.name}>
+                        <p className="text-sm font-semibold text-neutral-800">{area.name}</p>
+                        <p className="text-xs text-neutral-500 leading-relaxed">{area.desc}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-neutral-100 shadow-sm p-6">
+                  <h3 className="font-serif font-bold text-neutral-900 text-lg flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-amber-600" />
+                    Sesi foto
+                  </h3>
+                  <ul className="mt-3 space-y-2">
+                    {availableTimeSlots.map(slot => (
+                      <li key={slot} className="text-sm text-neutral-700">{slot}</li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-neutral-500 mt-3 leading-relaxed">
+                    Sesi foto bisa di outdoor, home visit, atau studio partner.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </>
+      ) : (
+        <section className="max-w-6xl mx-auto px-4 pt-8 pb-20">
+          {!selectedSub ? (
+            /* Sub-Category View */
+            <div className="max-w-3xl mx-auto bg-amber-50/40 border border-amber-200/60 rounded-3xl p-6 md:p-10 shadow-xl">
+              <button
+                onClick={resetViews}
+                className="inline-flex items-center gap-2 text-sm font-semibold text-amber-800 hover:text-amber-950 mb-6 bg-white px-4 py-2 rounded-full shadow-sm border border-amber-200/60 transition-all hover:scale-105"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Kembali ke Beranda & Kategori
+              </button>
+
+              <div className="border-b border-amber-200/60 pb-6 mb-8">
+                <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-3 py-1 rounded-full uppercase tracking-wider">
+                  Sub-Kategori & Portofolio Paket
+                </span>
+                <h2 className="font-serif text-3xl md:text-4xl font-bold text-neutral-900 mt-3 mb-2">
+                  {selectedCategory.title}
+                </h2>
+                <p className="text-neutral-600 text-base">{selectedCategory.tagline}</p>
+              </div>
+
+              <div className="space-y-6">
+                {selectedCategory.subcategories.map((sub) => (
+                  <div
+                    key={sub.id}
+                    className="bg-white rounded-2xl p-5 shadow-sm border border-neutral-100 hover:border-amber-300 transition-all duration-300 flex flex-col md:flex-row items-center gap-6"
+                  >
+                    <div className="relative w-full md:w-44 h-40 rounded-xl overflow-hidden flex-shrink-0 bg-neutral-100 shadow-md">
+                      <img
+                        src={sub.image}
+                        alt={sub.name}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover"
+                      />
                     </div>
 
-                    {!isCustom ? (
+                    <div className="flex-1 w-full">
+                      <h4 className="font-serif text-xl font-bold text-neutral-900 mb-1">{sub.name}</h4>
+                      <p className="text-neutral-600 text-sm mb-4">{sub.desc}</p>
                       <button
                         onClick={() => {
-                          setBookingErrors({});
-                          setSelectedPackageForBooking(pkg);
+                          setSelectedSub(sub);
+                          setSelectedPackageForBooking(null);
                         }}
-                        className="w-full bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white font-semibold py-3 px-4 rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow"
+                        className="w-full md:w-auto bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 text-sm flex items-center justify-center gap-2 shadow-md"
                       >
                         <Check className="w-4 h-4" />
-                        <span>Pilih Paket Ini</span>
+                        <span>Pilih Sub-Kategori Ini</span>
                       </button>
-                    ) : (
-                      <a
-                        href={`https://wa.me/${WA_NUMBER}?text=Halo%20Kak,%20saya%20punya%20ide%20konsep%20custom%20sendiri%20untuk%20sesi%20foto.`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow"
-                      >
-                        <MessageCircle className="w-4 h-4 fill-white text-emerald-600" />
-                        <span>Konsultasi Gratis via WhatsApp</span>
-                      </a>
-                    )}
+                    </div>
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
-          </div>
-        ) : (
-          /* Final Booking Form dengan lokasi teks terstruktur */
-          <div className="max-w-2xl mx-auto bg-white border border-amber-200/80 rounded-3xl p-6 md:p-10 shadow-xl">
-            <button
-              onClick={() => setSelectedPackageForBooking(null)}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-amber-800 hover:text-amber-950 mb-6 bg-amber-50 px-4 py-2 rounded-full shadow-sm border border-amber-200/60 transition-all hover:scale-105"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Kembali ke Daftar Paket
-            </button>
-
-            <div className="border-b border-neutral-100 pb-5 mb-6">
-              <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                Konfirmasi Jadwal & Paket
-              </span>
-              <h3 className="font-serif text-xl font-bold text-neutral-900 mt-1">
-                {selectedPackageForBooking.name} ({selectedPackageForBooking.price})
-              </h3>
-              <p className="text-neutral-600 text-xs mt-1">{selectedPackageForBooking.spec}</p>
-            </div>
-
-            <form onSubmit={handleFinalBookingSubmit} noValidate className="space-y-5">
-              <Field
-                label="Nama Pemesan"
-                htmlFor="booking-name"
-                icon={<User className="w-4 h-4 text-amber-600" />}
-                error={bookingErrors.name}
+          ) : !selectedPackageForBooking ? (
+            /* Detailed 4 Cards View */
+            <div className="max-w-4xl mx-auto bg-amber-50/40 border border-amber-200/60 rounded-3xl p-6 md:p-10 shadow-xl">
+              <button
+                onClick={() => setSelectedSub(null)}
+                className="inline-flex items-center gap-2 text-sm font-semibold text-amber-800 hover:text-amber-950 mb-6 bg-white px-4 py-2 rounded-full shadow-sm border border-amber-200/60 transition-all hover:scale-105"
               >
-                <input
-                  id="booking-name"
-                  type="text"
-                  value={bookingName}
-                  onChange={(e) => setBookingName(e.target.value)}
-                  placeholder="Tulis namamu"
-                  aria-invalid={!!bookingErrors.name}
-                  className={inputClass(!!bookingErrors.name)}
-                />
-              </Field>
+                <ArrowLeft className="w-4 h-4" />
+                Kembali ke Sub-Kategori
+              </button>
 
-              <Field
-                label="Pilih Tanggal Pemotretan"
-                htmlFor="booking-date"
-                icon={<Calendar className="w-4 h-4 text-amber-600" />}
-                error={bookingErrors.date}
-              >
-                <input
-                  id="booking-date"
-                  type="date"
-                  min={minDate}
-                  value={bookingDate}
-                  onChange={(e) => setBookingDate(e.target.value)}
-                  aria-invalid={!!bookingErrors.date}
-                  className={inputClass(!!bookingErrors.date)}
-                />
-              </Field>
-
-              <Field
-                label="Pilih Sesi Jam / Waktu"
-                htmlFor="booking-time"
-                icon={<Clock className="w-4 h-4 text-amber-600" />}
-              >
-                <select
-                  id="booking-time"
-                  value={bookingTime}
-                  onChange={(e) => setBookingTime(e.target.value)}
-                  className={inputClass()}
-                >
-                  {availableTimeSlots.map((slot, i) => (
-                    <option key={i} value={slot}>{slot}</option>
-                  ))}
-                </select>
-              </Field>
-
-              <div>
-                <span className="text-sm font-semibold text-neutral-800 mb-3 flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-amber-600" />
-                  Lokasi Sesi Foto
+              <div className="border-b border-amber-200/60 pb-6 mb-8">
+                <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-3 py-1 rounded-full uppercase tracking-wider">
+                  Pilihan Paket: {selectedSub.name}
                 </span>
-                <LocationFields
-                  idPrefix="booking-loc"
-                  value={bookingLoc}
-                  onChange={setBookingLoc}
-                  error={bookingErrors.location}
-                />
+                <h2 className="font-serif text-2xl md:text-3xl font-bold text-neutral-900 mt-2 mb-1">
+                  Pilih Paket yang Sesuai Budget & Keinginanmu
+                </h2>
+                <p className="text-neutral-600 text-sm">Setiap paket sudah dirancang transparan tanpa biaya tersembunyi.</p>
               </div>
 
-              {/* Ringkasan pesanan */}
-              <div className="rounded-2xl bg-amber-50/60 border border-amber-200/70 p-4 text-sm">
-                <p className="font-serif font-bold text-neutral-900 mb-2">Ringkasan pesananmu</p>
-                <dl className="space-y-1.5 text-neutral-700">
-                  <div className="flex gap-2">
-                    <dt className="w-20 flex-shrink-0 text-neutral-500">Paket</dt>
-                    <dd className="font-medium">{selectedPackageForBooking.name} ({selectedPackageForBooking.price})</dd>
-                  </div>
-                  <div className="flex gap-2">
-                    <dt className="w-20 flex-shrink-0 text-neutral-500">Tanggal</dt>
-                    <dd className="font-medium">{bookingDate ? formatDateID(bookingDate) : 'Belum dipilih'}</dd>
-                  </div>
-                  <div className="flex gap-2">
-                    <dt className="w-20 flex-shrink-0 text-neutral-500">Jam</dt>
-                    <dd className="font-medium">{bookingTime}</dd>
-                  </div>
-                  <div className="flex gap-2">
-                    <dt className="w-20 flex-shrink-0 text-neutral-500">Lokasi</dt>
-                    <dd className="font-medium">
-                      {bookingLoc.address.trim()
-                        ? `${bookingLoc.address.trim()} (${bookingLoc.area})`
-                        : `Belum diisi (${bookingLoc.area})`}
-                    </dd>
-                  </div>
-                </dl>
-                <p className="text-xs text-neutral-500 mt-3">DP 50% untuk mengunci tanggal, pelunasan setelah sesi foto selesai.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {selectedSub.packages.map((pkg, i) => {
+                  const isCustom = isCustomPackage(pkg);
+                  return (
+                    <div 
+                      key={i}
+                      className={`rounded-3xl p-6 border shadow-md flex flex-col justify-between transition-all ${
+                        isCustom 
+                          ? 'bg-amber-50 border-amber-300 md:col-span-2' 
+                          : 'bg-white border-neutral-200 hover:border-amber-400'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex justify-between items-start mb-3 gap-3">
+                          <h3 className="font-serif text-xl font-bold text-neutral-900">{pkg.name}</h3>
+                          <span className="bg-amber-100 text-amber-900 font-mono font-bold text-sm px-3 py-1 rounded-full flex-shrink-0">
+                            {pkg.price}
+                          </span>
+                        </div>
+                        
+                        {!isCustom ? (
+                          <div className="space-y-2 mb-6 text-sm text-neutral-700">
+                            <p className="font-medium text-neutral-900">📦 {pkg.spec}</p>
+                            <p className="text-emerald-700 font-medium">🎁 Bonus: {pkg.bonus}</p>
+                            <p className="text-neutral-500 italic text-xs">💡 Cocok buat: {pkg.ideal}</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2 mb-6 text-sm text-neutral-700">
+                            <p className="font-serif font-bold text-amber-900 text-base">Punya ide sendiri?</p>
+                            <p className="text-neutral-700">Budget & konsep bisa kita sesuaikan. Ceritain aja mau kamu dipotoin kayak gimana!</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {!isCustom ? (
+                        <button
+                          onClick={() => {
+                            setBookingErrors({});
+                            setSelectedPackageForBooking(pkg);
+                          }}
+                          className="w-full bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-white font-semibold py-3 px-4 rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow"
+                        >
+                          <Check className="w-4 h-4" />
+                          <span>Pilih Paket Ini</span>
+                        </button>
+                      ) : (
+                        <a
+                          href={`https://wa.me/${WA_NUMBER}?text=Halo%20Kak,%20saya%20punya%20ide%20konsep%20custom%20sendiri%20untuk%20sesi%20foto.`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-xl transition-all text-sm flex items-center justify-center gap-2 shadow"
+                        >
+                          <MessageCircle className="w-4 h-4 fill-white text-emerald-600" />
+                          <span>Konsultasi Gratis via WhatsApp</span>
+                        </a>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            /* Final Booking Form dengan lokasi teks terstruktur */
+            <div className="max-w-2xl mx-auto bg-white border border-amber-200/80 rounded-3xl p-6 md:p-10 shadow-xl">
+              <button
+                onClick={() => setSelectedPackageForBooking(null)}
+                className="inline-flex items-center gap-2 text-sm font-semibold text-amber-800 hover:text-amber-950 mb-6 bg-amber-50 px-4 py-2 rounded-full shadow-sm border border-amber-200/60 transition-all hover:scale-105"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Kembali ke Daftar Paket
+              </button>
+
+              <div className="border-b border-neutral-100 pb-5 mb-6">
+                <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                  Konfirmasi Jadwal & Paket
+                </span>
+                <h3 className="font-serif text-xl font-bold text-neutral-900 mt-1">
+                  {selectedPackageForBooking.name} ({selectedPackageForBooking.price})
+                </h3>
+                <p className="text-neutral-600 text-xs mt-1">{selectedPackageForBooking.spec}</p>
               </div>
 
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 shadow-xl hover:scale-[1.01]"
+              <form onSubmit={handleFinalBookingSubmit} noValidate className="space-y-5">
+                <Field
+                  label="Nama Pemesan"
+                  htmlFor="booking-name"
+                  icon={<User className="w-4 h-4 text-amber-600" />}
+                  error={bookingErrors.name}
                 >
-                  <MessageCircle className="w-5 h-5 fill-white text-emerald-600" />
-                  <span>Kirim Jadwal & Pesan via WhatsApp</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-      </section>
+                  <input
+                    id="booking-name"
+                    type="text"
+                    value={bookingName}
+                    onChange={(e) => setBookingName(e.target.value)}
+                    placeholder="Tulis namamu"
+                    aria-invalid={!!bookingErrors.name}
+                    className={inputClass(!!bookingErrors.name)}
+                  />
+                </Field>
+
+                <Field
+                  label="Pilih Tanggal Pemotretan"
+                  htmlFor="booking-date"
+                  icon={<Calendar className="w-4 h-4 text-amber-600" />}
+                  error={bookingErrors.date}
+                >
+                  <input
+                    id="booking-date"
+                    type="date"
+                    min={minDate}
+                    value={bookingDate}
+                    onChange={(e) => setBookingDate(e.target.value)}
+                    aria-invalid={!!bookingErrors.date}
+                    className={inputClass(!!bookingErrors.date)}
+                  />
+                </Field>
+
+                <Field
+                  label="Pilih Sesi Jam / Waktu"
+                  htmlFor="booking-time"
+                  icon={<Clock className="w-4 h-4 text-amber-600" />}
+                >
+                  <select
+                    id="booking-time"
+                    value={bookingTime}
+                    onChange={(e) => setBookingTime(e.target.value)}
+                    className={inputClass()}
+                  >
+                    {availableTimeSlots.map((slot, i) => (
+                      <option key={i} value={slot}>{slot}</option>
+                    ))}
+                  </select>
+                </Field>
+
+                <div>
+                  <span className="text-sm font-semibold text-neutral-800 mb-3 flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-amber-600" />
+                    Lokasi Sesi Foto
+                  </span>
+                  <LocationFields
+                    idPrefix="booking-loc"
+                    value={bookingLoc}
+                    onChange={setBookingLoc}
+                    error={bookingErrors.location}
+                  />
+                </div>
+
+                {/* Ringkasan pesanan */}
+                <div className="rounded-2xl bg-amber-50/60 border border-amber-200/70 p-4 text-sm">
+                  <p className="font-serif font-bold text-neutral-900 mb-2">Ringkasan pesananmu</p>
+                  <dl className="space-y-1.5 text-neutral-700">
+                    <div className="flex gap-2">
+                      <dt className="w-20 flex-shrink-0 text-neutral-500">Paket</dt>
+                      <dd className="font-medium">{selectedPackageForBooking.name} ({selectedPackageForBooking.price})</dd>
+                    </div>
+                    <div className="flex gap-2">
+                      <dt className="w-20 flex-shrink-0 text-neutral-500">Tanggal</dt>
+                      <dd className="font-medium">{bookingDate ? formatDateID(bookingDate) : 'Belum dipilih'}</dd>
+                    </div>
+                    <div className="flex gap-2">
+                      <dt className="w-20 flex-shrink-0 text-neutral-500">Jam</dt>
+                      <dd className="font-medium">{bookingTime}</dd>
+                    </div>
+                    <div className="flex gap-2">
+                      <dt className="w-20 flex-shrink-0 text-neutral-500">Lokasi</dt>
+                      <dd className="font-medium">
+                        {bookingLoc.address.trim()
+                          ? `${bookingLoc.address.trim()} (${bookingLoc.area})`
+                          : `Belum diisi (${bookingLoc.area})`}
+                      </dd>
+                    </div>
+                  </dl>
+                  <p className="text-xs text-neutral-500 mt-3">DP 50% untuk mengunci tanggal, pelunasan setelah sesi foto selesai.</p>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 shadow-xl hover:scale-[1.01]"
+                  >
+                    <MessageCircle className="w-5 h-5 fill-white text-emerald-600" />
+                    <span>Kirim Jadwal & Pesan via WhatsApp</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* WIZARD MODAL / KALKULATOR */}
       {isWizardOpen && (
@@ -1678,23 +1927,23 @@ export default function LandingPage() {
       )}
 
       {/* Footer */}
-      <footer className="border-t border-neutral-100 bg-neutral-50/60">
+      <footer className="bg-neutral-950 text-neutral-300">
         <div className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-3 gap-10">
           <div>
-            <p className="font-serif font-bold text-xl text-neutral-900">Potoin Kamu</p>
-            <p className="text-sm text-neutral-600 mt-2 leading-relaxed">
-              Jasa fotografi profesional untuk wilayah Malang dan sekitarnya.
+            <p className="font-serif font-bold text-xl text-white">Potoin Kamu</p>
+            <p className="text-sm text-neutral-400 mt-2 leading-relaxed">
+              Jasa fotografi profesional untuk wilayah Malang dan sekitarnya. UMKM & Student Friendly Photography.
             </p>
           </div>
 
           <div>
-            <p className="font-semibold text-sm text-neutral-900 mb-3">Jelajahi</p>
+            <p className="font-semibold text-sm text-white mb-3">Jelajahi</p>
             <ul className="space-y-2">
               {navLinks.map(link => (
                 <li key={link.id}>
                   <button
                     onClick={() => goToSection(link.id)}
-                    className="text-sm text-neutral-600 hover:text-amber-700 transition-colors"
+                    className="text-sm text-neutral-400 hover:text-amber-400 transition-colors"
                   >
                     {link.label}
                   </button>
@@ -1704,9 +1953,9 @@ export default function LandingPage() {
           </div>
 
           <div>
-            <p className="font-semibold text-sm text-neutral-900 mb-3">Hubungi kami</p>
+            <p className="font-semibold text-sm text-white mb-3">Hubungi kami</p>
             <a
-              href={`https://wa.me/${WA_NUMBER}?text=Halo%20Kak,%20saya%20mau%20konsultasi%20dulu%20tentang%20jasa%20fotografinya.`}
+              href={waConsultUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-5 py-3 rounded-xl transition-all"
@@ -1717,8 +1966,8 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <div className="text-center py-6 text-neutral-400 text-xs border-t border-neutral-100">
-          &copy; 2026 Potoin Kamu. All rights reserved. UMKM & Student Friendly Photography.
+        <div className="text-center py-6 text-neutral-500 text-xs border-t border-neutral-800">
+          &copy; 2026 Potoin Kamu. All rights reserved.
         </div>
       </footer>
     </main>
